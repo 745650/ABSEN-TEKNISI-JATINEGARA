@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root, body[data-theme="graphite"]{
     --bg:#0d0e11;
@@ -731,7 +731,7 @@
         <div class="sidebar-nav-item" data-category="B2B"><span class="nav-icon">&#127970;</span><span>B2B</span><span class="nav-badge" id="navBadgeB2B">0</span></div>
       </div>
     </div>
-    <div class="sidebar-foot">Setiap kategori punya roster &amp; jadwal terpisah. Upload atau tambah teknisi sesuai kategori yang sedang aktif.</div>
+    <div class="sidebar-foot">Data diambil langsung dari Google Sheets berdasarkan kolom UNIT (ASSR/PROVI/B2B). Edit jadwal di spreadsheet, lalu Refresh Data.</div>
   </aside>
 
   <div class="main-content">
@@ -852,15 +852,13 @@
     <label for="monthSelector">&#128197; Bulan Aktif</label>
     <select id="monthSelector"></select>
     <span class="month-tag" id="monthStatusTag">-</span>
-    <span class="save-indicator" id="saveIndicator">&#9679; Tersimpan</span>
+    <span class="save-indicator" id="saveIndicator">&#9679; Live</span>
     <span style="flex:1;"></span>
     <div class="sektor-filter-bar">
       <label for="sektorFilter">&#127760; Sektor</label>
       <select id="sektorFilter"><option value="ALL">Semua Sektor</option></select>
     </div>
-    <button class="btn" id="btnCopyPrev" title="Salin jadwal dari bulan sebelumnya sebagai titik awal">&#8617; Salin dari Bulan Lalu</button>
-    <button class="btn primary" id="btnUploadJadwal" title="Upload file Excel jadwal kerja (.xlsx/.xls/.csv) untuk mengisi bulan aktif">&#11014; Upload Jadwal (Excel)</button>
-    <input type="file" id="uploadJadwalInput" accept=".xlsx,.xls,.csv" style="display:none;">
+    <button class="btn primary" id="btnRefreshData" title="Ambil ulang data terbaru dari Google Sheets">&#128260; Refresh Data</button>
   </div>
   <div class="schedule-controls">
     <div>
@@ -878,19 +876,10 @@
     </div>
   </div>
   <div class="schedule-controls" style="margin-top:-6px;">
-    <div class="edit-hint">&#9998;&#65039; Klik sel status untuk mengubah (&ndash; &rarr; M &rarr; L &rarr; S &rarr; C &rarr; I &rarr; PM)</div>
+    <div class="edit-hint">&#128196; Data diambil langsung dari Google Sheets (sumber: sheet &ldquo;JADWAL &lt;BULAN&gt;&rdquo;) &mdash; untuk mengubah jadwal, edit langsung di spreadsheet lalu klik Refresh Data.</div>
     <div class="schedule-actions">
-      <button class="btn" id="btnAddTech">&#43; Tambah Teknisi</button>
-      <button class="btn" id="btnReset">&#8635; Kosongkan Bulan Ini</button>
       <button class="btn primary" id="btnExport">&#11015; Export (JSON)</button>
     </div>
-  </div>
-  <div class="add-tech-form" id="addTechForm">
-    <input type="text" id="newTechId" placeholder="NIK Teknisi">
-    <input type="text" id="newTechName" placeholder="Nama Teknisi">
-    <input type="text" id="newTechSektor" placeholder="Sektor (mis. SEKTOR JATINEGARA 1)">
-    <button class="btn primary" id="btnSaveNewTech">Simpan</button>
-    <button class="btn" id="btnCancelNewTech">Batal</button>
   </div>
   <div class="table-scroll">
     <table id="scheduleTable">
@@ -898,11 +887,11 @@
       <tbody id="scheduleBody"></tbody>
     </table>
   </div>
-  <div class="footnote">
-    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus. Gunakan tombol <b>Upload Jadwal (Excel)</b> untuk mengganti roster &amp; jadwal bulan aktif langsung dari file Excel/CSV baru (format kolom: NO, NAMA, SEKTOR, UNIT, NO HP, NIK, lalu kolom tanggal 1&ndash;31) &mdash; pilih dulu <b>Bulan Aktif</b> yang sesuai sebelum upload.
+  <div class="footnote" id="scheduleFootnote">
+    <b>Sumber data:</b> Google Sheets &ldquo;JADWAL KERJA - JATINEGARA&rdquo;, sheet/tab bernama sesuai <b>Bulan Aktif</b> (contoh: <b>JADWAL JULI</b> untuk bulan Juli, otomatis mengikuti nama bulan yang dipilih). Kolom <b>UNIT</b> pada sheet menentukan kategori: <b>ASSR</b> &rarr; Assurance, <b>PROVI</b> &rarr; Provisioning, <b>B2B</b> &rarr; B2B. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Data di-refresh otomatis secara berkala, atau klik <b>Refresh Data</b> kapan saja untuk mengambil data terbaru.
   </div>
-  <div class="history-row" id="historyRow"></div>
 </div>
+
 
 <!-- REKAP KEHADIRAN PER TEKNISI -->
 <div class="panel" id="rekapPanel" style="margin-top:22px;">
@@ -957,11 +946,15 @@ document.querySelectorAll('.theme-opt').forEach(btn=>{
   });
 });
 
-/* ================= ROSTER TEKNISI ASLI (dari file jadwal_kerja_teknisi_assurance_juli_2026.xlsx) ================= */
-const REAL_ROSTER = [{"id": "25780014", "name": "MARYONO", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81293138373"}, {"id": "25860037", "name": "FEBRI BAND SAKTI SIREGAR", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85100569217"}, {"id": "25730013", "name": "ARIS SUYANTO", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81285959774"}, {"id": "25820030", "name": "DIDIK WAHYUDI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81280336411"}, {"id": "25740008", "name": "DEDI MULYADI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85101559954"}, {"id": "25990200", "name": "SEPTIANA DWI PRATAMA", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "82112522676"}, {"id": "25940125", "name": "MUHAMAD JAJAT SUDRAJAT", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81398027638"}, {"id": "26030026", "name": "IBNU ADDAM MUSTAFA", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81337692421"}, {"id": "26020037", "name": "MUHAMMAD SAYYIDI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85285537523"}, {"id": "25850032", "name": "HARYADI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81281478585"}, {"id": "25920095", "name": "DEDE SUPIANDI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81315730907"}, {"id": "25900109", "name": "CANDRA SEPTIANA", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81318078445"}, {"id": "25890062", "name": "AGUS PURWANTO", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81285975967"}, {"id": "25020217", "name": "MUHAMMAD RIZKY", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "82379570038"}, {"id": "25750018", "name": "ISWAN GANI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81285959868"}, {"id": "25740009", "name": "AGUS PRIATNA", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "85100646869"}, {"id": "25900080", "name": "PAHRU ROHMAT", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81284212453"}, {"id": "25980191", "name": "IKHSAN WIBISANA", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81283922127"}, {"id": "25750019", "name": "NURACHMAT", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81282387548"}, {"id": "25760016", "name": "UMAR SAID", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "85100434589"}, {"id": "25810022", "name": "ABUCHOIR MUSLIM", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81219716610"}, {"id": "26060019", "name": "MUHAMMAD BARLY ALFANDI", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "8232066695"}, {"id": "25850033", "name": "REZA SATRIA PERDANA", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "85100465959"}, {"id": "26980024", "name": "TRI AJI SULISTIYONO", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81288844762"}, {"id": "26950014", "name": "AHMAD MUHTI", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "82124202343"}, {"id": "25870041", "name": "SUDARYANTO", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81280716025"}, {"id": "25760017", "name": "SUWADI", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85100276661"}, {"id": "25000203", "name": "ILMAN MAULANA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81311771357"}, {"id": "25730025", "name": "HENDRA HIDAYAT", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85100722877"}, {"id": "25760018", "name": "BUDI SOMANTRI", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81213591554"}, {"id": "25950146", "name": "SEPTIANA MAULANA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85101000240"}, {"id": "25970169", "name": "SADING", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "82190150860"}, {"id": "26950043", "name": "AGUNG NUGRAHA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81293082145"}];
-
-/* ================= JADWAL JULI 2026 ASLI (dari file yang sama) ================= */
-const REAL_SCHEDULE_JULI2026 = {"25780014": ["L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "L", "M", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "PM", "L", "M", "M", "M"], "25860037": ["M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "M", "L", "PM", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M"], "25730013": ["PM", "L", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "PM", "L", "M"], "25820030": ["M", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "M", "M", "PM", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "PM", "L"], "25740008": ["M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "PM", "L", "L", "M", "M", "M", "L", "M", "M", "M"], "25990200": ["M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "M", "M", "M", "L", "PM"], "25940125": ["M", "M", "M", "L", "PM", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "M", "L", "L", "M", "M", "M", "M", "M"], "26030026": ["M", "M", "L", "M", "L", "PM", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "M", "L"], "26020037": ["M", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "L", "M", "M"], "25850032": ["M", "PM", "L", "M", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "M", "L", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L"], "25920095": ["PM", "L", "L", "M", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "I", "L", "PM", "L", "M", "M", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M"], "25900109": ["M", "M", "PM", "L", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M"], "25890062": ["M", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M"], "25020217": ["L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "PM", "M", "M", "M", "M", "L", "M", "M", "M", "L", "M", "L", "M", "M", "L", "M", "M", "PM"], "25750018": ["M", "M", "M", "L", "PM", "M", "M", "L", "M", "M", "L", "M", "S", "M", "PM", "L", "M", "L", "PM", "M", "M", "M", "PM", "L", "M", "L", "M", "PM", "L", "M", "M"], "25740009": ["M", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "PM", "L", "M", "M", "L", "PM", "M", "M", "M", "L", "M"], "25900080": ["M", "M", "L", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "M", "L", "M", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M"], "25980191": ["M", "L", "M", "M", "L", "M", "M", "L", "L", "L", "M", "PM", "M", "M", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "PM", "M", "M", "M", "L", "M"], "25750019": ["M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "L", "M", "M", "PM"], "25760016": ["L", "M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "L", "PM", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "M"], "25810022": ["L", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M"], "26060019": ["M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M"], "25850033": ["M", "PM", "L", "L", "M", "M", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "M", "M", "L"], "26980024": ["PM", "L", "M", "M", "L", "M", "M", "L", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M"], "26950014": ["M", "M", "M", "L", "PM", "M", "M", "M", "L", "M", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "PM", "L"], "25870041": ["M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "M", "M", "L", "PM", "L", "M", "L", "M", "M", "M"], "25760017": ["PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "L", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "PM", "L", "L", "M", "M", "M", "L", "M", "PM"], "25000203": ["L", "M", "M", "L", "PM", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M"], "25730025": ["M", "L", "M", "PM", "M", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "M", "PM", "L"], "25760018": ["M", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M"], "25950146": ["M", "M", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M"], "25970169": ["L", "M", "M", "L", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "L", "M", "M", "M", "L", "PM", "M", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M"], "26950043": ["M", "PM", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "M", "L"]};
+/* ================= SUMBER DATA: GOOGLE SHEETS ================= */
+const SPREADSHEET_ID = '1uQZQ-idj-kcOMiu5QR5ATGCffjrkuR7RqKcOLmJq6do';
+// Nama sheet/tab mengikuti pola "JADWAL <BULAN>" (mis. JADWAL JULI, JADWAL AGUSTUS, dst)
+function sheetNameForMonth(m){ return 'JADWAL ' + BULAN_UPPER[m]; }
+function sheetCsvUrl(sheetName){
+  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+// Kolom UNIT di sheet -> kategori di sidebar
+const UNIT_TO_CATEGORY = { 'ASSR':'ASSURANCE', 'PROVI':'PROVISIONING', 'B2B':'B2B' };
 
 const STATUS = {
   X:{key:'X', label:'Belum Diisi', color:'#3a3f4a'},
@@ -977,94 +970,127 @@ const MIN_HARI_KERJA = 22; // ambang batas minimal hari kerja (Masuk + Piket Mal
 
 const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const BULAN_UPPER = BULAN.map(b => b.toUpperCase());
 
 const REAL_TODAY = new Date();
 const REAL_YEAR = REAL_TODAY.getFullYear();
 const REAL_MONTH = REAL_TODAY.getMonth();
 const REAL_DATE = REAL_TODAY.getDate();
 
-/* ================= STORAGE HELPERS (persist via window.storage) ================= */
-async function storageGet(key, shared){
-  try{
-    const res = await window.storage.get(key, shared);
-    return res ? res.value : null;
-  }catch(e){ return null; }
+/* ================= AMBIL & PARSE DATA DARI GOOGLE SHEETS ================= */
+function normalizeStatusCode(raw){
+  if(raw === null || raw === undefined) return 'X';
+  const s = String(raw).trim().toUpperCase();
+  if(s === '') return 'X';
+  if(s === 'P') return 'PM'; // "P" (Piket) dipetakan ke Piket Malam
+  if(STATUS_ORDER.includes(s)) return s;
+  return 'X';
 }
-async function storageSet(key, value, shared){
-  try{ await window.storage.set(key, value, shared); return true; }
-  catch(e){ console.error('Gagal menyimpan', key, e); return false; }
+
+// Cari baris header (mengandung "NAMA"), lalu ekstrak semua baris teknisi sampai baris nama kosong pertama
+// (menghindari tabel rekap tambahan di kolom-kolom lain pada sheet yang sama).
+function parseJadwalSheet(aoa){
+  let headerRow = -1, colNo=-1, colNama=-1, colSektor=-1, colUnit=-1, colNoHp=-1, colNik=-1;
+  for(let r=0; r<Math.min(aoa.length, 15); r++){
+    const row = aoa[r] || [];
+    const idx = row.findIndex(c => String(c||'').trim().toUpperCase() === 'NAMA');
+    if(idx !== -1){
+      headerRow = r;
+      row.forEach((c,i)=>{
+        const label = String(c||'').trim().toUpperCase();
+        if(label === 'NO') colNo = i;
+        else if(label === 'NAMA') colNama = i;
+        else if(label === 'SEKTOR') colSektor = i;
+        else if(label === 'UNIT') colUnit = i;
+        else if(label === 'NO HP' || label === 'NOHP') colNoHp = i;
+        else if(label === 'NIK') colNik = i;
+      });
+      break;
+    }
+  }
+  if(headerRow === -1 || colNama === -1){
+    throw new Error('Kolom "NAMA" tidak ditemukan di sheet.');
+  }
+  const identityCols = [colNo, colNama, colSektor, colUnit, colNoHp, colNik].filter(c => c !== -1);
+  const lastIdentityCol = Math.max(...identityCols);
+
+  let dateRow = -1;
+  for(let r = headerRow; r <= headerRow+2 && r < aoa.length; r++){
+    const row = aoa[r] || [];
+    const nums = row.slice(lastIdentityCol+1).filter(c => typeof c === 'number' || (typeof c === 'string' && /^\d+$/.test(c.trim())));
+    if(nums.length >= 20){ dateRow = r; break; }
+  }
+  let dayCols = [];
+  if(dateRow !== -1){
+    (aoa[dateRow]||[]).forEach((c,i)=>{
+      const isNum = typeof c === 'number' || (typeof c === 'string' && /^\d+$/.test(String(c).trim()));
+      if(i > lastIdentityCol && isNum) dayCols.push(i);
+    });
+  } else {
+    const maxCol = Math.max(...aoa.map(row => (row||[]).length)) - 1;
+    for(let i=lastIdentityCol+1; i<=maxCol; i++) dayCols.push(i);
+  }
+  const dataStartRow = (dateRow !== -1 ? dateRow : headerRow) + 1;
+
+  const result = [];
+  for(let r = dataStartRow; r < aoa.length; r++){
+    const row = aoa[r] || [];
+    const name = String(row[colNama]||'').trim();
+    if(!name) break; // berhenti begitu ketemu baris kosong -> hindari tabel rekap tambahan di bawah/sebelah
+    const nik = colNik !== -1 && row[colNik] !== undefined && row[colNik] !== null && row[colNik] !== '' ? String(row[colNik]).trim() : null;
+    const sektor = colSektor !== -1 ? String(row[colSektor]||'').trim() : '';
+    const unitRaw = colUnit !== -1 ? String(row[colUnit]||'').trim().toUpperCase() : '';
+    const nohp = colNoHp !== -1 && row[colNoHp] !== undefined && row[colNoHp] !== null ? String(row[colNoHp]).trim() : '';
+    const id = nik || ('NM' + name.replace(/\s+/g,'').toUpperCase().slice(0,16) + r);
+    const category = UNIT_TO_CATEGORY[unitRaw] || null;
+    const schedule = dayCols.map(c => normalizeStatusCode(row[c]));
+    result.push({ id, name, sektor, unit: unitRaw, category, nohp, schedule });
+  }
+  return result;
 }
-async function storageListKeys(prefix, shared){
-  try{
-    const res = await window.storage.list(prefix, shared);
-    return res && res.keys ? res.keys : [];
-  }catch(e){ return []; }
+
+function parseCsv(csvText){
+  const parsed = Papa.parse(csvText, { skipEmptyLines:false });
+  return parsed.data;
 }
 
 /* ================= KATEGORI (ASSURANCE / PROVISIONING / B2B) ================= */
 const CATEGORIES = ['ASSURANCE','PROVISIONING','B2B'];
 let activeCategory = 'ASSURANCE';
-function rosterStorageKey(cat){ return 'roster:teknisi:'+cat; }
 
-/* ================= ROSTER (daftar teknisi tetap per kategori, dipakai di semua bulan) ================= */
-let roster = [];
-async function ensureRoster(cat){
-  const stored = await storageGet(rosterStorageKey(cat), true);
-  if(stored){
-    try{ const parsed = JSON.parse(stored); if(Array.isArray(parsed)) return parsed; }
-    catch(e){ /* fallthrough to seed */ }
-  }
-  // Hanya kategori ASSURANCE yang sudah punya data awal (dari file upload pertama)
-  const seed = cat === 'ASSURANCE'
-    ? REAL_ROSTER.map(r => ({ id:r.id, name:r.name, sektor:r.sektor, unit:r.unit, nohp:r.nohp }))
-    : [];
-  await storageSet(rosterStorageKey(cat), JSON.stringify(seed), true);
-  return seed;
-}
-async function persistRoster(){ await storageSet(rosterStorageKey(activeCategory), JSON.stringify(roster), true); }
-
-/* ================= DATA JADWAL PER BULAN (per kategori) ================= */
-function pad2(n){ return String(n).padStart(2,'0'); }
-function monthKey(y,m){ return `${y}-${pad2(m+1)}`; }
-function jadwalPrefix(cat){ return 'jadwal:'+cat+':'; }
-
-async function loadMonthSchedules(y,m){
-  const raw = await storageGet(jadwalPrefix(activeCategory)+monthKey(y,m), true);
-  if(!raw) return null;
-  try{ return JSON.parse(raw); }catch(e){ return null; }
-}
-async function saveMonthSchedules(y,m, techs){
-  const data = techs.map(t => ({ id:t.id, schedule:t.schedule }));
-  await storageSet(jadwalPrefix(activeCategory)+monthKey(y,m), JSON.stringify(data), true);
-}
-function buildTechnicians(scheduleData, daysInMonth, y, m){
-  const map = {};
-  (scheduleData || []).forEach(s => { map[s.id] = s.schedule; });
-  const isJuli2026Assurance = (activeCategory === 'ASSURANCE' && y === 2026 && m === 6);
-  return roster.map(r => {
-    let sched = map[r.id];
-    if(!sched || sched.length !== daysInMonth){
-      let base;
-      if(!sched && isJuli2026Assurance && REAL_SCHEDULE_JULI2026[r.id]){
-        base = REAL_SCHEDULE_JULI2026[r.id].slice(0, daysInMonth);
-      } else {
-        base = (sched || []).slice(0, daysInMonth);
-      }
-      while(base.length < daysInMonth) base.push('X');
-      sched = base;
-    }
-    return { id: r.id, name: r.name, sektor: r.sektor || '', unit: r.unit || '', nohp: r.nohp || '', schedule: sched };
-  });
-}
-
-/* ================= STATE AKTIF (bulan yang sedang dilihat/diisi) ================= */
+/* ================= STATE DATA (hasil fetch dari Google Sheets untuk bulan aktif) ================= */
+let allTechnicians = [];   // seluruh teknisi (semua kategori) hasil parse sheet bulan aktif
+let technicians = [];      // subset sesuai activeCategory (sebelum filter sektor)
 let YEAR, MONTH, DAYS_IN_MONTH, TODAY_DATE, IS_CURRENT_MONTH;
-let technicians = [];
 let TOTAL_TEKNISI = 0;
 let activeSektor = 'ALL';
+let lastFetchError = null;
 
 function pct(n){ return TOTAL_TEKNISI ? Math.round((n/TOTAL_TEKNISI)*1000)/10 : 0; }
 function getFiltered(){ return activeSektor === 'ALL' ? technicians : technicians.filter(t => t.sektor === activeSektor); }
+function applyCategoryFilter(){
+  technicians = allTechnicians.filter(t => t.category === activeCategory);
+  TOTAL_TEKNISI = technicians.length;
+}
+
+async function fetchScheduleForMonth(y, m){
+  const sheetName = sheetNameForMonth(m);
+  const url = sheetCsvUrl(sheetName);
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`Sheet "${sheetName}" tidak ditemukan / tidak bisa diakses (pastikan tab sheet ada & di-share "Anyone with the link").`);
+  const csvText = await res.text();
+  if(/^\s*<!DOCTYPE html/i.test(csvText) || /accounts\.google\.com/i.test(csvText)){
+    throw new Error(`Sheet "${sheetName}" tidak bisa diakses publik. Pastikan share setting sudah "Anyone with the link can view".`);
+  }
+  const aoa = parseCsv(csvText);
+  const parsed = parseJadwalSheet(aoa);
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  return parsed.map(p => {
+    let sched = p.schedule.slice(0, daysInMonth);
+    while(sched.length < daysInMonth) sched.push('X');
+    return { ...p, schedule: sched };
+  });
+}
 
 /* ================= CLOCK ================= */
 function updateClock(){
@@ -1190,16 +1216,16 @@ function renderScheduleBody(){
   const list = getFiltered();
   let bodyHtml = '';
   list.forEach((t, tIdx)=>{
-    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<button class="del-tech-btn" data-delid="${t.id}" title="Hapus teknisi dari roster">&times;</button><br><span class="sektor-sub">${t.sektor || ''}</span></td>`;
+    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<br><span class="sektor-sub">${t.sektor || ''}</span></td>`;
     t.schedule.forEach((st, i)=>{
       const d = i+1;
       const isToday = IS_CURRENT_MONTH && d === TODAY_DATE;
       const label = st === 'X' ? '&ndash;' : st;
-      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-techid="${t.id}" data-day="${i}"><span class="status-pill st-${st}">${label}</span></td>`;
+      bodyHtml += `<td class="${isToday?'today-col':''}"><span class="status-pill st-${st}" style="cursor:default;">${label}</span></td>`;
     });
     bodyHtml += `</tr>`;
   });
-  bodyEl.innerHTML = bodyHtml || '<tr><td style="padding:16px;color:var(--muted-2);">Tidak ada teknisi pada sektor ini.</td></tr>';
+  bodyEl.innerHTML = bodyHtml || '<tr><td style="padding:16px;color:var(--muted-2);">Tidak ada teknisi pada kategori/sektor ini.</td></tr>';
 }
 
 /* ================= RENDER: TEKNISI MASUK HARI/TANGGAL AKTIF ================= */
@@ -1267,10 +1293,11 @@ function renderRekapTable(){
 /* ================= FILTER SEKTOR ================= */
 function populateSektorFilter(){
   const sel = document.getElementById('sektorFilter');
-  const sektorSet = Array.from(new Set(roster.map(r => r.sektor).filter(Boolean))).sort();
+  const sektorSet = Array.from(new Set(technicians.map(t => t.sektor).filter(Boolean))).sort();
   let html = '<option value="ALL">Semua Sektor</option>';
   sektorSet.forEach(s => { html += `<option value="${s}">${s}</option>`; });
   sel.innerHTML = html;
+  if(!sektorSet.includes(activeSektor)) activeSektor = 'ALL';
   sel.value = activeSektor;
 }
 
@@ -1292,75 +1319,73 @@ function refreshDerived(){
   renderRekapTable();
 }
 
-/* ================= SIMPAN OTOMATIS ================= */
-async function persistCurrentMonth(){
+/* ================= AMBIL DATA UNTUK BULAN AKTIF ================= */
+async function loadMonthData(y, m){
   const indicator = document.getElementById('saveIndicator');
-  indicator.textContent = '● Menyimpan...';
-  indicator.className = 'save-indicator saving';
-  await saveMonthSchedules(YEAR, MONTH, technicians);
-  indicator.textContent = '● Tersimpan';
-  indicator.className = 'save-indicator saved';
   const tag = document.getElementById('monthStatusTag');
-  tag.textContent = IS_CURRENT_MONTH ? 'Bulan berjalan — ada data' : 'Ada data tersimpan';
-  tag.className = 'month-tag filled';
-  renderHistoryRow();
-}
+  indicator.textContent = '● Memuat...';
+  indicator.className = 'save-indicator saving';
+  tag.textContent = 'Mengambil dari Sheets...';
+  tag.className = 'month-tag current';
 
-/* ================= PINDAH BULAN AKTIF ================= */
-async function switchMonth(y, m){
   YEAR = y; MONTH = m;
   DAYS_IN_MONTH = new Date(YEAR, MONTH+1, 0).getDate();
   IS_CURRENT_MONTH = (YEAR === REAL_YEAR && MONTH === REAL_MONTH);
   TODAY_DATE = IS_CURRENT_MONTH ? REAL_DATE : DAYS_IN_MONTH;
 
-  let scheduleData = await loadMonthSchedules(YEAR, MONTH);
-  const wasEmpty = !scheduleData;
-  technicians = buildTechnicians(scheduleData, DAYS_IN_MONTH, YEAR, MONTH);
-  TOTAL_TEKNISI = technicians.length;
-
-  // Jika Juli 2026 kategori ASSURANCE belum pernah disimpan, simpan langsung hasil seed dari file asli
-  if(wasEmpty && activeCategory === 'ASSURANCE' && YEAR === 2026 && MONTH === 6){
-    await saveMonthSchedules(YEAR, MONTH, technicians);
-    scheduleData = true;
+  try{
+    allTechnicians = await fetchScheduleForMonth(YEAR, MONTH);
+    lastFetchError = null;
+    indicator.textContent = '● Live';
+    indicator.className = 'save-indicator saved';
+    tag.textContent = `Sheet: ${sheetNameForMonth(MONTH)}`;
+    tag.className = 'month-tag filled';
+  }catch(err){
+    console.error(err);
+    lastFetchError = err.message;
+    allTechnicians = [];
+    indicator.textContent = '● Gagal memuat';
+    indicator.className = 'save-indicator';
+    tag.textContent = 'Data tidak tersedia';
+    tag.className = 'month-tag empty';
   }
 
-  const tag = document.getElementById('monthStatusTag');
-  if(scheduleData){ tag.textContent = 'Ada data tersimpan'; tag.className = 'month-tag filled'; }
-  else if(IS_CURRENT_MONTH){ tag.textContent = 'Bulan berjalan — belum diisi'; tag.className = 'month-tag current'; }
-  else { tag.textContent = 'Belum ada data'; tag.className = 'month-tag empty'; }
-
+  activeSektor = 'ALL';
+  applyCategoryFilter();
   updateHeaderSub();
+  populateSektorFilter();
   renderAll();
-  renderHistoryRow();
+  await refreshNavBadges();
 }
 
 /* ================= NAVIGASI KATEGORI ================= */
 function updateHeaderSub(){
   const catLabel = activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase();
-  document.getElementById('headerSub').textContent =
-    `STO Jatinegara (JTN) — Kategori: ${catLabel} — ${TOTAL_TEKNISI} teknisi — input manual per bulan, tersimpan otomatis`;
-}
-async function refreshNavBadges(){
-  for(const cat of CATEGORIES){
-    const stored = await storageGet(rosterStorageKey(cat), true);
-    let count = 0;
-    if(stored){ try{ const parsed = JSON.parse(stored); count = Array.isArray(parsed) ? parsed.length : 0; }catch(e){} }
-    else if(cat === 'ASSURANCE'){ count = REAL_ROSTER.length; }
-    const badge = document.getElementById('navBadge'+cat);
-    if(badge) badge.textContent = count;
+  const sub = document.getElementById('headerSub');
+  if(lastFetchError){
+    sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel} — Gagal mengambil data: ${lastFetchError}`;
+  } else {
+    sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel} — ${TOTAL_TEKNISI} teknisi — data live dari Google Sheets`;
   }
 }
-async function switchCategory(cat){
+async function refreshNavBadges(){
+  CATEGORIES.forEach(cat=>{
+    const count = allTechnicians.filter(t => t.category === cat).length;
+    const badge = document.getElementById('navBadge'+cat);
+    if(badge) badge.textContent = count;
+  });
+}
+function switchCategory(cat){
   if(cat === activeCategory) return;
   activeCategory = cat;
   document.querySelectorAll('.sidebar-nav-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.category === cat);
   });
   activeSektor = 'ALL';
-  roster = await ensureRoster(activeCategory);
+  applyCategoryFilter();
+  updateHeaderSub();
   populateSektorFilter();
-  await switchMonth(YEAR, MONTH);
-  await refreshNavBadges();
+  renderAll();
 }
 document.getElementById('categoryNav').addEventListener('click', (e)=>{
   const item = e.target.closest('.sidebar-nav-item');
@@ -1372,7 +1397,7 @@ document.getElementById('categoryNav').addEventListener('click', (e)=>{
 function populateMonthSelector(){
   const sel = document.getElementById('monthSelector');
   let html = '';
-  for(let offset = -12; offset <= 3; offset++){
+  for(let offset = -6; offset <= 3; offset++){
     const d = new Date(REAL_YEAR, REAL_MONTH + offset, 1);
     const y = d.getFullYear(), m = d.getMonth();
     const label = `${BULAN[m]} ${y}` + ((y===REAL_YEAR && m===REAL_MONTH) ? ' (Bulan Berjalan)' : '');
@@ -1381,35 +1406,7 @@ function populateMonthSelector(){
   sel.innerHTML = html;
   sel.addEventListener('change', async ()=>{
     const [y,m] = sel.value.split('-').map(Number);
-    await switchMonth(y, m);
-  });
-}
-
-/* ================= RIWAYAT BULAN ================= */
-async function renderHistoryRow(){
-  const prefix = jadwalPrefix(activeCategory);
-  const rawKeys = await storageListKeys(prefix, true);
-  const container = document.getElementById('historyRow');
-  if(!rawKeys || rawKeys.length === 0){
-    container.innerHTML = '<span style="font-size:11px;color:var(--muted-2);">Riwayat bulan akan muncul di sini setelah kamu mulai mengisi jadwal.</span>';
-    return;
-  }
-  const monthKeys = rawKeys.map(k => k.startsWith(prefix) ? k.slice(prefix.length) : k).filter(k => /^\d{4}-\d{2}$/.test(k));
-  const sorted = Array.from(new Set(monthKeys)).sort().reverse();
-  let html = '<div style="width:100%;font-size:11px;color:var(--muted-2);margin-bottom:2px;">Riwayat Bulan Tersimpan:</div>';
-  sorted.forEach(mk=>{
-    const [y,m] = mk.split('-').map(Number);
-    const label = `${BULAN[m-1]} ${y}`;
-    const active = (y===YEAR && (m-1)===MONTH) ? ' active' : '';
-    html += `<div class="history-chip${active}" data-y="${y}" data-m="${m-1}"><b>${label}</b></div>`;
-  });
-  container.innerHTML = html;
-  container.querySelectorAll('.history-chip').forEach(chip=>{
-    chip.addEventListener('click', async ()=>{
-      const y = parseInt(chip.dataset.y,10), m = parseInt(chip.dataset.m,10);
-      document.getElementById('monthSelector').value = `${y}-${m}`;
-      await switchMonth(y, m);
-    });
+    await loadMonthData(y, m);
   });
 }
 
@@ -1431,229 +1428,16 @@ document.getElementById('sektorFilter').addEventListener('change', (e)=>{
   renderRekapTable();
 });
 
-/* ================= EVENT: EDIT SEL / HAPUS TEKNISI ================= */
-document.getElementById('scheduleBody').addEventListener('click', async (e)=>{
-  const delBtn = e.target.closest('.del-tech-btn');
-  if(delBtn){
-    const delId = delBtn.dataset.delid;
-    const t = technicians.find(x => x.id === delId);
-    if(!t) return;
-    if(!confirm(`Hapus ${t.name} (${t.id}) dari roster teknisi? Teknisi ini tidak akan tampil lagi di semua bulan.`)) return;
-    roster = roster.filter(r => r.id !== delId);
-    await persistRoster();
-    technicians = technicians.filter(x => x.id !== delId);
-    TOTAL_TEKNISI = technicians.length;
-    await persistCurrentMonth();
-    populateSektorFilter();
-    updateHeaderSub();
-    renderAll();
-    await refreshNavBadges();
-    showToast(`${t.name} dihapus dari roster.`);
-    return;
-  }
-  const cell = e.target.closest('.editable-cell');
-  if(!cell) return;
-  const techId = cell.dataset.techid;
-  const dIdx = parseInt(cell.dataset.day, 10);
-  const t = technicians.find(x => x.id === techId);
-  if(!t) return;
-  const current = t.schedule[dIdx];
-  const nextIdx = (STATUS_ORDER.indexOf(current) + 1) % STATUS_ORDER.length;
-  const next = STATUS_ORDER[nextIdx];
-  t.schedule[dIdx] = next;
-
-  const pill = cell.querySelector('.status-pill');
-  pill.className = `status-pill st-${next}`;
-  pill.innerHTML = next === 'X' ? '&ndash;' : next;
-
-  await persistCurrentMonth();
-  refreshDerived();
-  showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
+/* ================= EVENT: REFRESH DATA ================= */
+document.getElementById('btnRefreshData').addEventListener('click', async ()=>{
+  showToast('Mengambil data terbaru dari Google Sheets...');
+  await loadMonthData(YEAR, MONTH);
+  if(lastFetchError){ showToast('Gagal memuat: ' + lastFetchError); }
+  else { showToast('Data berhasil diperbarui dari Google Sheets.'); }
 });
 
-/* ================= EVENT: TAMBAH TEKNISI ================= */
-document.getElementById('btnAddTech').addEventListener('click', ()=>{
-  document.getElementById('addTechForm').classList.add('show');
-  document.getElementById('newTechId').focus();
-});
-document.getElementById('btnCancelNewTech').addEventListener('click', ()=>{
-  document.getElementById('addTechForm').classList.remove('show');
-  document.getElementById('newTechId').value = '';
-  document.getElementById('newTechName').value = '';
-  document.getElementById('newTechSektor').value = '';
-});
-document.getElementById('btnSaveNewTech').addEventListener('click', async ()=>{
-  const id = document.getElementById('newTechId').value.trim();
-  const name = document.getElementById('newTechName').value.trim();
-  const sektor = document.getElementById('newTechSektor').value.trim();
-  if(!id || !name){ showToast('NIK dan Nama teknisi wajib diisi.'); return; }
-  if(roster.some(r => r.id.toLowerCase() === id.toLowerCase())){ showToast('NIK teknisi sudah dipakai, gunakan NIK lain.'); return; }
-  roster.push({ id, name, sektor, unit:'ASSR', nohp:'' });
-  await persistRoster();
-  technicians.push({ id, name, sektor, unit:'ASSR', nohp:'', schedule: Array(DAYS_IN_MONTH).fill('X') });
-  TOTAL_TEKNISI = technicians.length;
-  await persistCurrentMonth();
-  populateSektorFilter();
-  updateHeaderSub();
-  renderAll();
-  await refreshNavBadges();
-  document.getElementById('addTechForm').classList.remove('show');
-  document.getElementById('newTechId').value = '';
-  document.getElementById('newTechName').value = '';
-  document.getElementById('newTechSektor').value = '';
-  showToast(`${name} ditambahkan ke roster teknisi.`);
-});
-
-/* ================= EVENT: KOSONGKAN BULAN INI ================= */
-document.getElementById('btnReset').addEventListener('click', async ()=>{
-  if(!confirm(`Kosongkan semua jadwal untuk ${BULAN[MONTH]} ${YEAR}? Bulan lain tidak akan terpengaruh.`)) return;
-  technicians.forEach(t=>{ t.schedule = Array(DAYS_IN_MONTH).fill('X'); });
-  await persistCurrentMonth();
-  renderAll();
-  showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} dikosongkan.`);
-});
-
-/* ================= EVENT: SALIN DARI BULAN LALU ================= */
-document.getElementById('btnCopyPrev').addEventListener('click', async ()=>{
-  let py = YEAR, pm = MONTH - 1;
-  if(pm < 0){ pm = 11; py -= 1; }
-  const prevData = await loadMonthSchedules(py, pm);
-  if(!prevData){ showToast(`Belum ada data tersimpan untuk ${BULAN[pm]} ${py}.`); return; }
-  if(!confirm(`Salin jadwal dari ${BULAN[pm]} ${py} sebagai titik awal ${BULAN[MONTH]} ${YEAR}? Data yang sudah diisi di bulan ini akan ditimpa.`)) return;
-  const map = {};
-  prevData.forEach(s => { map[s.id] = s.schedule; });
-  technicians.forEach(t=>{
-    const src = map[t.id];
-    if(src){
-      const base = src.slice(0, DAYS_IN_MONTH);
-      while(base.length < DAYS_IN_MONTH) base.push('X');
-      t.schedule = base;
-    }
-  });
-  await persistCurrentMonth();
-  renderAll();
-  showToast(`Jadwal disalin dari ${BULAN[pm]} ${py}.`);
-});
-
-/* ================= EVENT: UPLOAD JADWAL (EXCEL/CSV) ================= */
-function normalizeStatusCode(raw){
-  if(raw === null || raw === undefined) return 'X';
-  const s = String(raw).trim().toUpperCase();
-  if(s === '') return 'X';
-  if(s === 'P') return 'PM'; // "P" (Piket) dari file lama dipetakan ke Piket Malam
-  if(STATUS_ORDER.includes(s)) return s;
-  return 'X'; // kode tak dikenal dianggap belum diisi
-}
-
-function parseJadwalSheet(aoa){
-  // Cari baris header yang mengandung kolom "NAMA"
-  let headerRow = -1, colNo=-1, colNama=-1, colSektor=-1, colUnit=-1, colNoHp=-1, colNik=-1;
-  for(let r=0; r<Math.min(aoa.length, 10); r++){
-    const row = aoa[r] || [];
-    const idx = row.findIndex(c => String(c||'').trim().toUpperCase() === 'NAMA');
-    if(idx !== -1){
-      headerRow = r;
-      row.forEach((c,i)=>{
-        const label = String(c||'').trim().toUpperCase();
-        if(label === 'NO') colNo = i;
-        else if(label === 'NAMA') colNama = i;
-        else if(label === 'SEKTOR') colSektor = i;
-        else if(label === 'UNIT') colUnit = i;
-        else if(label === 'NO HP' || label === 'NOHP') colNoHp = i;
-        else if(label === 'NIK') colNik = i;
-      });
-      break;
-    }
-  }
-  if(headerRow === -1 || colNama === -1){
-    throw new Error('Format file tidak dikenali: kolom "NAMA" tidak ditemukan.');
-  }
-  // Kolom terakhir identitas (untuk menentukan mulai kolom hari)
-  const identityCols = [colNo, colNama, colSektor, colUnit, colNoHp, colNik].filter(c => c !== -1);
-  const lastIdentityCol = Math.max(...identityCols);
-
-  // Cari baris angka tanggal (1..31) tepat di bawah / dekat header
-  let dateRow = -1;
-  for(let r = headerRow; r <= headerRow+2 && r < aoa.length; r++){
-    const row = aoa[r] || [];
-    const nums = row.slice(lastIdentityCol+1).filter(c => typeof c === 'number');
-    if(nums.length >= 20){ dateRow = r; break; }
-  }
-  let dayCols = [];
-  if(dateRow !== -1){
-    (aoa[dateRow]||[]).forEach((c,i)=>{
-      if(i > lastIdentityCol && typeof c === 'number') dayCols.push(i);
-    });
-  } else {
-    // fallback: semua kolom setelah identitas dianggap kolom hari
-    const maxCol = Math.max(...aoa.map(row => (row||[]).length)) - 1;
-    for(let i=lastIdentityCol+1; i<=maxCol; i++) dayCols.push(i);
-  }
-  const dataStartRow = (dateRow !== -1 ? dateRow : headerRow) + 1;
-
-  const result = [];
-  for(let r = dataStartRow; r < aoa.length; r++){
-    const row = aoa[r] || [];
-    const name = String(row[colNama]||'').trim();
-    if(!name) continue;
-    const nik = colNik !== -1 && row[colNik] !== undefined && row[colNik] !== null && row[colNik] !== '' ? String(row[colNik]).trim() : null;
-    const sektor = colSektor !== -1 ? String(row[colSektor]||'').trim() : '';
-    const unit = colUnit !== -1 ? String(row[colUnit]||'').trim() : '';
-    const nohp = colNoHp !== -1 && row[colNoHp] !== undefined && row[colNoHp] !== null ? String(row[colNoHp]).trim() : '';
-    const id = nik || ('NM' + name.replace(/\s+/g,'').toUpperCase().slice(0,16) + r);
-    const schedule = dayCols.map(c => normalizeStatusCode(row[c]));
-    result.push({ id, name, sektor, unit, nohp, schedule });
-  }
-  return result;
-}
-
-document.getElementById('btnUploadJadwal').addEventListener('click', ()=>{
-  document.getElementById('uploadJadwalInput').click();
-});
-document.getElementById('uploadJadwalInput').addEventListener('change', async (e)=>{
-  const file = e.target.files[0];
-  e.target.value = '';
-  if(!file) return;
-  try{
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const sheetName = wb.SheetNames[0];
-    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:null, raw:true });
-    const parsed = parseJadwalSheet(aoa);
-    if(parsed.length === 0){ showToast('Tidak ada baris teknisi yang terbaca dari file.'); return; }
-
-    const daysDetected = parsed[0].schedule.length;
-    const ok = confirm(
-      `Terbaca ${parsed.length} teknisi dengan ${daysDetected} hari jadwal dari file "${file.name}".\n\n` +
-      `Data ini akan MENGGANTI roster & jadwal untuk kategori ${activeCategory}, bulan aktif: ${BULAN[MONTH]} ${YEAR}.\n\n` +
-      `Lanjutkan?`
-    );
-    if(!ok) return;
-
-    // Ganti roster dengan hasil upload
-    roster = parsed.map(p => ({ id:p.id, name:p.name, sektor:p.sektor, unit:p.unit, nohp:p.nohp }));
-    await persistRoster();
-
-    // Sesuaikan panjang schedule dengan jumlah hari di bulan aktif
-    technicians = parsed.map(p => {
-      let sched = p.schedule.slice(0, DAYS_IN_MONTH);
-      while(sched.length < DAYS_IN_MONTH) sched.push('X');
-      return { id:p.id, name:p.name, sektor:p.sektor, unit:p.unit, nohp:p.nohp, schedule: sched };
-    });
-    TOTAL_TEKNISI = technicians.length;
-    activeSektor = 'ALL';
-
-    await persistCurrentMonth();
-    populateSektorFilter();
-    updateHeaderSub();
-    renderAll();
-    await refreshNavBadges();
-    showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} (${activeCategory}) berhasil diisi dari "${file.name}" (${parsed.length} teknisi).`);
-  }catch(err){
-    console.error(err);
-    showToast('Gagal membaca file: ' + err.message);
-  }
-});
+// Refresh otomatis tiap 5 menit supaya dashboard tetap "LIVE"
+setInterval(()=>{ loadMonthData(YEAR, MONTH); }, 5 * 60 * 1000);
 
 /* ================= EVENT: EXPORT JSON ================= */
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -1676,12 +1460,12 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 /* ================= INIT ================= */
 async function init(){
   activeCategory = 'ASSURANCE';
-  roster = await ensureRoster(activeCategory);
-  populateSektorFilter();
-  await switchMonth(2026, 6); // buka langsung ke Juli 2026 (bulan sumber data Assurance)
+  document.querySelectorAll('.sidebar-nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.category === activeCategory);
+  });
+  YEAR = REAL_YEAR; MONTH = REAL_MONTH;
   populateMonthSelector();
-  renderHistoryRow();
-  await refreshNavBadges();
+  await loadMonthData(REAL_YEAR, REAL_MONTH);
 }
 init();
 </script>
