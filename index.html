@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root, body[data-theme="graphite"]{
     --bg:#0d0e11;
@@ -708,6 +709,8 @@
       <select id="sektorFilter"><option value="ALL">Semua Sektor</option></select>
     </div>
     <button class="btn" id="btnCopyPrev" title="Salin jadwal dari bulan sebelumnya sebagai titik awal">&#8617; Salin dari Bulan Lalu</button>
+    <button class="btn primary" id="btnUploadJadwal" title="Upload file Excel jadwal kerja (.xlsx/.xls/.csv) untuk mengisi bulan aktif">&#11014; Upload Jadwal (Excel)</button>
+    <input type="file" id="uploadJadwalInput" accept=".xlsx,.xls,.csv" style="display:none;">
   </div>
   <div class="schedule-controls">
     <div>
@@ -746,7 +749,7 @@
     </table>
   </div>
   <div class="footnote">
-    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus. Jadwal Juli 2026 sudah terisi otomatis dari file jadwal yang diunggah.
+    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus. Gunakan tombol <b>Upload Jadwal (Excel)</b> untuk mengganti roster &amp; jadwal bulan aktif langsung dari file Excel/CSV baru (format kolom: NO, NAMA, SEKTOR, UNIT, NO HP, NIK, lalu kolom tanggal 1&ndash;31) &mdash; pilih dulu <b>Bulan Aktif</b> yang sesuai sebelum upload.
   </div>
   <div class="history-row" id="historyRow"></div>
 </div>
@@ -1328,6 +1331,124 @@ document.getElementById('btnCopyPrev').addEventListener('click', async ()=>{
   await persistCurrentMonth();
   renderAll();
   showToast(`Jadwal disalin dari ${BULAN[pm]} ${py}.`);
+});
+
+/* ================= EVENT: UPLOAD JADWAL (EXCEL/CSV) ================= */
+function normalizeStatusCode(raw){
+  if(raw === null || raw === undefined) return 'X';
+  const s = String(raw).trim().toUpperCase();
+  if(s === '') return 'X';
+  if(s === 'P') return 'PM'; // "P" (Piket) dari file lama dipetakan ke Piket Malam
+  if(STATUS_ORDER.includes(s)) return s;
+  return 'X'; // kode tak dikenal dianggap belum diisi
+}
+
+function parseJadwalSheet(aoa){
+  // Cari baris header yang mengandung kolom "NAMA"
+  let headerRow = -1, colNo=-1, colNama=-1, colSektor=-1, colUnit=-1, colNoHp=-1, colNik=-1;
+  for(let r=0; r<Math.min(aoa.length, 10); r++){
+    const row = aoa[r] || [];
+    const idx = row.findIndex(c => String(c||'').trim().toUpperCase() === 'NAMA');
+    if(idx !== -1){
+      headerRow = r;
+      row.forEach((c,i)=>{
+        const label = String(c||'').trim().toUpperCase();
+        if(label === 'NO') colNo = i;
+        else if(label === 'NAMA') colNama = i;
+        else if(label === 'SEKTOR') colSektor = i;
+        else if(label === 'UNIT') colUnit = i;
+        else if(label === 'NO HP' || label === 'NOHP') colNoHp = i;
+        else if(label === 'NIK') colNik = i;
+      });
+      break;
+    }
+  }
+  if(headerRow === -1 || colNama === -1){
+    throw new Error('Format file tidak dikenali: kolom "NAMA" tidak ditemukan.');
+  }
+  // Kolom terakhir identitas (untuk menentukan mulai kolom hari)
+  const identityCols = [colNo, colNama, colSektor, colUnit, colNoHp, colNik].filter(c => c !== -1);
+  const lastIdentityCol = Math.max(...identityCols);
+
+  // Cari baris angka tanggal (1..31) tepat di bawah / dekat header
+  let dateRow = -1;
+  for(let r = headerRow; r <= headerRow+2 && r < aoa.length; r++){
+    const row = aoa[r] || [];
+    const nums = row.slice(lastIdentityCol+1).filter(c => typeof c === 'number');
+    if(nums.length >= 20){ dateRow = r; break; }
+  }
+  let dayCols = [];
+  if(dateRow !== -1){
+    (aoa[dateRow]||[]).forEach((c,i)=>{
+      if(i > lastIdentityCol && typeof c === 'number') dayCols.push(i);
+    });
+  } else {
+    // fallback: semua kolom setelah identitas dianggap kolom hari
+    const maxCol = Math.max(...aoa.map(row => (row||[]).length)) - 1;
+    for(let i=lastIdentityCol+1; i<=maxCol; i++) dayCols.push(i);
+  }
+  const dataStartRow = (dateRow !== -1 ? dateRow : headerRow) + 1;
+
+  const result = [];
+  for(let r = dataStartRow; r < aoa.length; r++){
+    const row = aoa[r] || [];
+    const name = String(row[colNama]||'').trim();
+    if(!name) continue;
+    const nik = colNik !== -1 && row[colNik] !== undefined && row[colNik] !== null && row[colNik] !== '' ? String(row[colNik]).trim() : null;
+    const sektor = colSektor !== -1 ? String(row[colSektor]||'').trim() : '';
+    const unit = colUnit !== -1 ? String(row[colUnit]||'').trim() : '';
+    const nohp = colNoHp !== -1 && row[colNoHp] !== undefined && row[colNoHp] !== null ? String(row[colNoHp]).trim() : '';
+    const id = nik || ('NM' + name.replace(/\s+/g,'').toUpperCase().slice(0,16) + r);
+    const schedule = dayCols.map(c => normalizeStatusCode(row[c]));
+    result.push({ id, name, sektor, unit, nohp, schedule });
+  }
+  return result;
+}
+
+document.getElementById('btnUploadJadwal').addEventListener('click', ()=>{
+  document.getElementById('uploadJadwalInput').click();
+});
+document.getElementById('uploadJadwalInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const sheetName = wb.SheetNames[0];
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:null, raw:true });
+    const parsed = parseJadwalSheet(aoa);
+    if(parsed.length === 0){ showToast('Tidak ada baris teknisi yang terbaca dari file.'); return; }
+
+    const daysDetected = parsed[0].schedule.length;
+    const ok = confirm(
+      `Terbaca ${parsed.length} teknisi dengan ${daysDetected} hari jadwal dari file "${file.name}".\n\n` +
+      `Data ini akan MENGGANTI roster & jadwal untuk bulan aktif: ${BULAN[MONTH]} ${YEAR}.\n\n` +
+      `Lanjutkan?`
+    );
+    if(!ok) return;
+
+    // Ganti roster dengan hasil upload
+    roster = parsed.map(p => ({ id:p.id, name:p.name, sektor:p.sektor, unit:p.unit, nohp:p.nohp }));
+    await persistRoster();
+
+    // Sesuaikan panjang schedule dengan jumlah hari di bulan aktif
+    technicians = parsed.map(p => {
+      let sched = p.schedule.slice(0, DAYS_IN_MONTH);
+      while(sched.length < DAYS_IN_MONTH) sched.push('X');
+      return { id:p.id, name:p.name, sektor:p.sektor, unit:p.unit, nohp:p.nohp, schedule: sched };
+    });
+    TOTAL_TEKNISI = technicians.length;
+    activeSektor = 'ALL';
+
+    await persistCurrentMonth();
+    populateSektorFilter();
+    renderAll();
+    showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} berhasil diisi dari "${file.name}" (${parsed.length} teknisi).`);
+  }catch(err){
+    console.error(err);
+    showToast('Gagal membaca file: ' + err.message);
+  }
 });
 
 /* ================= EVENT: EXPORT JSON ================= */
