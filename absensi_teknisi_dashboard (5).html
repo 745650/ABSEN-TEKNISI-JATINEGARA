@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Kehadiran Teknisi - LIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root, body[data-theme="graphite"]{
+    --bg:#0d0e11;
+    --bg-alt:#0a0b0d;
+    --panel:#17181d;
+    --panel-2:#131418;
+    --border:#272a31;
+    --text:#eceef2;
+    --muted:#9195a0;
+    --muted-2:#5f636e;
+
+    --cyan:#4c9eff;
+    --cyan-dim:#1c2c47;
+    --green:#3fd393;
+    --green-dim:#123528;
+    --red:#f0616a;
+    --red-dim:#3a1c22;
+    --violet:#a48af0;
+    --violet-dim:#2a2247;
+    --amber:#f2b13c;
+    --amber-dim:#3a2c14;
+    --slate:#7488a6;
+    --slate-dim:#1c283a;
+
+    --glow-1:rgba(76,158,255,0.07);
+    --glow-2:rgba(164,138,240,0.05);
+  }
+  body[data-theme="indigo"]{
+    --bg:#0a0e1e;
+    --bg-alt:#080b17;
+    --panel:#131a30;
+    --panel-2:#0f1526;
+    --border:#232c4c;
+    --text:#e8ecf9;
+    --muted:#8b93b8;
+    --muted-2:#5b6390;
+
+    --cyan:#5b8cff;
+    --cyan-dim:#1e2a52;
+    --green:#3fd393;
+    --green-dim:#123528;
+    --red:#f0616a;
+    --red-dim:#3a1c22;
+    --violet:#9d8bf5;
+    --violet-dim:#2a2453;
+    --amber:#f2b13c;
+    --amber-dim:#3a2c14;
+    --slate:#7080ab;
+    --slate-dim:#1c2440;
+
+    --glow-1:rgba(91,140,255,0.10);
+    --glow-2:rgba(157,139,245,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 500px at 85% -10%, var(--glow-1), transparent),
+      radial-gradient(900px 500px at 0% 110%, var(--glow-2), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:28px 32px 60px;
+    transition:background-color 0.3s ease, color 0.3s ease;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* HEADER */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:26px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--border);
+  }
+  .title-block h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:0.2px;
+  }
+  .title-block .sub{color:var(--muted);font-size:13.5px;}
+  .live-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--red-dim);
+    color:var(--red);
+    border:1px solid rgba(240,97,106,0.35);
+    padding:4px 10px 4px 8px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.6px;
+    margin-right:10px;
+    vertical-align:middle;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--red);
+    animation:pulse 1.4s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(240,97,106,0.55);}
+    70%{box-shadow:0 0 0 7px rgba(240,97,106,0);}
+    100%{box-shadow:0 0 0 0 rgba(240,97,106,0);}
+  }
+  .clock-box{
+    text-align:right;
+  }
+  .theme-switch{
+    display:inline-flex;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:3px;
+    margin-bottom:10px;
+    gap:2px;
+  }
+  .theme-opt{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+    padding:5px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .theme-opt.active{
+    background:var(--cyan);
+    color:#0a0e1e;
+  }
+  .theme-opt:not(.active):hover{color:var(--text);}
+  .clock-box .time{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:var(--cyan);
+  }
+  .clock-box .date{color:var(--muted);font-size:12.5px;margin-top:2px;}
+
+  /* KPI GRID */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:14px;
+    margin-bottom:22px;
+  }
+  @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+
+  .kpi-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px 16px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .kpi-card::before{
+    content:"";
+    position:absolute;
+    top:0;left:0;right:0;height:3px;
+    background:var(--accent,var(--cyan));
+  }
+  .kpi-card .kpi-label{
+    font-size:11.5px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    font-weight:600;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .kpi-card .kpi-icon{font-size:15px;opacity:0.85;}
+  .kpi-card .kpi-value{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:32px;
+    font-weight:700;
+    line-height:1;
+    color:var(--text);
+  }
+  .kpi-card .kpi-foot{
+    font-size:11.5px;
+    color:var(--muted-2);
+    margin-top:8px;
+  }
+  .kpi-card.total{--accent:var(--cyan);}
+  .kpi-card.masuk{--accent:var(--green);}
+  .kpi-card.libur{--accent:var(--slate);}
+  .kpi-card.sakit{--accent:var(--red);}
+  .kpi-card.cuti{--accent:var(--violet);}
+  .kpi-card.izin{--accent:var(--amber);}
+  .kpi-card.masuk .kpi-value{color:var(--green);}
+  .kpi-card.sakit .kpi-value{color:var(--red);}
+  .kpi-card.cuti .kpi-value{color:var(--violet);}
+  .kpi-card.izin .kpi-value{color:var(--amber);}
+  .kpi-card.libur .kpi-value{color:var(--slate);}
+  .kpi-card.total .kpi-value{color:var(--cyan);}
+
+  /* MAIN ROW: gauge + trend */
+  .main-row{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    gap:16px;
+    margin-bottom:22px;
+  }
+  @media(max-width:900px){.main-row{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px;
+  }
+  .panel h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14.5px;
+    font-weight:700;
+    margin:0 0 4px;
+    color:var(--text);
+  }
+  .panel .panel-sub{font-size:11.5px;color:var(--muted);margin-bottom:14px;}
+
+  .gauge-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:calc(100% - 46px);
+  }
+  .gauge-num{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:44px;
+    font-weight:700;
+    color:var(--cyan);
+    margin-top:-118px;
+  }
+  .gauge-caption{font-size:12px;color:var(--muted);margin-top:2px;text-align:center;}
+
+  .trend-legend{
+    display:flex;
+    gap:16px;
+    margin-bottom:6px;
+    flex-wrap:wrap;
+  }
+  .trend-legend span{
+    font-size:11.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  /* SCHEDULE TABLE */
+  .schedule-panel{margin-bottom:10px;}
+  .schedule-controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .legend-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .legend-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .legend-swatch{
+    width:16px;height:16px;
+    border-radius:4px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:9px;
+    font-weight:700;
+    color:#0c1626;
+  }
+
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:11.5px;
+    min-width:1400px;
+  }
+  thead th{
+    background:var(--panel-2);
+    color:var(--muted);
+    font-weight:600;
+    padding:8px 6px;
+    text-align:center;
+    border-bottom:1px solid var(--border);
+    border-right:1px solid var(--border);
+    position:sticky;
+    top:0;
+  }
+  thead th.name-col{
+    text-align:left;
+    padding-left:14px;
+    min-width:170px;
+    position:sticky;
+    left:0;
+    z-index:3;
+    background:var(--panel-2);
+  }
+  thead th.today-col{color:var(--cyan);background:#132a3a;}
+  tbody td{
+    padding:6px 4px;
+    text-align:center;
+    border-right:1px solid var(--border);
+    border-bottom:1px solid rgba(31,48,80,0.6);
+  }
+  tbody td.name-col{
+    text-align:left;
+    padding-left:14px;
+    font-weight:600;
+    color:var(--text);
+    white-space:nowrap;
+    position:sticky;
+    left:0;
+    background:var(--panel);
+    z-index:2;
+  }
+  tbody tr:nth-child(even) td.name-col{background:#101d31;}
+  tbody tr:nth-child(even) td:not(.name-col){background:rgba(255,255,255,0.015);}
+  tbody td.today-col{background:rgba(55,201,221,0.06);}
+
+  .status-pill{
+    display:inline-flex;
+    width:22px;height:20px;
+    align-items:center;
+    justify-content:center;
+    border-radius:5px;
+    font-size:9.5px;
+    font-weight:700;
+    color:#0c1626;
+    cursor:pointer;
+    user-select:none;
+    transition:transform 0.1s ease, filter 0.15s ease;
+  }
+  .status-pill:hover{
+    filter:brightness(1.15);
+    transform:scale(1.12);
+    box-shadow:0 0 0 2px rgba(255,255,255,0.25);
+  }
+  tbody td.editable-cell{cursor:pointer;}
+  .st-M{background:var(--green);}
+  .st-L{background:var(--slate);color:#e8eef7;}
+  .st-S{background:var(--red);}
+  .st-C{background:var(--violet);}
+  .st-I{background:var(--amber);}
+
+  .schedule-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:12px;
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .btn.primary{background:var(--cyan);border-color:var(--cyan);color:#0c1626;}
+  .btn.primary:hover{filter:brightness(1.08);color:#0c1626;}
+  .edit-hint{
+    font-size:11.5px;
+    color:var(--muted-2);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-left:4px;
+  }
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--panel-2);
+    border:1px solid var(--cyan);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:12.5px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  #masukTodayTable{min-width:0;}
+  #masukTodayTable thead th{position:static;}
+  #masukTodayTable tbody td{border-right:1px solid var(--border);}
+
+  .footnote{
+    color:var(--muted-2);
+    font-size:11.5px;
+    margin-top:14px;
+    line-height:1.6;
+  }
+  .footnote b{color:var(--muted);}
+
+  ::-webkit-scrollbar{height:9px;width:9px;}
+  ::-webkit-scrollbar-track{background:var(--panel-2);}
+  ::-webkit-scrollbar-thumb{background:#233a5c;border-radius:6px;}
+</style>
+</head>
+<body data-theme="graphite">
+
+<header>
+  <div class="title-block">
+    <div style="margin-bottom:8px;">
+      <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+      <span style="color:var(--muted);font-size:12px;">diperbarui otomatis</span>
+    </div>
+    <h1>Dashboard Kehadiran Teknisi</h1>
+    <div class="sub">Monitoring absensi &amp; jadwal teknisi lapangan &mdash; data contoh (dummy)</div>
+  </div>
+  <div class="clock-box">
+    <div class="theme-switch" id="themeSwitch">
+      <button class="theme-opt active" data-theme="graphite">Graphite</button>
+      <button class="theme-opt" data-theme="indigo">Indigo</button>
+    </div>
+    <div class="time mono" id="clockTime">--:--:--</div>
+    <div class="date" id="clockDate">-</div>
+  </div>
+</header>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card total">
+    <div class="kpi-label"><span>Jumlah Teknisi</span><span class="kpi-icon">&#128101;</span></div>
+    <div class="kpi-value" id="kpiTotal">0</div>
+    <div class="kpi-foot">Total teknisi terdaftar</div>
+  </div>
+  <div class="kpi-card masuk">
+    <div class="kpi-label"><span>Masuk Hari Ini</span><span class="kpi-icon">&#9989;</span></div>
+    <div class="kpi-value" id="kpiMasuk">0</div>
+    <div class="kpi-foot" id="kpiMasukPct">0% dari total</div>
+  </div>
+  <div class="kpi-card libur">
+    <div class="kpi-label"><span>Libur Hari Ini</span><span class="kpi-icon">&#128564;</span></div>
+    <div class="kpi-value" id="kpiLibur">0</div>
+    <div class="kpi-foot" id="kpiLiburPct">0% dari total</div>
+  </div>
+  <div class="kpi-card sakit">
+    <div class="kpi-label"><span>Sakit Hari Ini</span><span class="kpi-icon">&#129658;</span></div>
+    <div class="kpi-value" id="kpiSakit">0</div>
+    <div class="kpi-foot" id="kpiSakitPct">0% dari total</div>
+  </div>
+  <div class="kpi-card cuti">
+    <div class="kpi-label"><span>Cuti Hari Ini</span><span class="kpi-icon">&#127974;</span></div>
+    <div class="kpi-value" id="kpiCuti">0</div>
+    <div class="kpi-foot" id="kpiCutiPct">0% dari total</div>
+  </div>
+  <div class="kpi-card izin">
+    <div class="kpi-label"><span>Izin Hari Ini</span><span class="kpi-icon">&#128221;</span></div>
+    <div class="kpi-value" id="kpiIzin">0</div>
+    <div class="kpi-foot" id="kpiIzinPct">0% dari total</div>
+  </div>
+</div>
+
+<!-- GAUGE + TREND -->
+<div class="main-row">
+  <div class="panel">
+    <h2>Kehadiran Hari Ini</h2>
+    <div class="panel-sub">Persentase teknisi masuk vs total</div>
+    <div class="gauge-wrap">
+      <canvas id="gaugeChart" width="220" height="220"></canvas>
+      <div class="gauge-num" id="gaugeNum">0%</div>
+      <div class="gauge-caption" id="gaugeCaption">0 dari 0 teknisi masuk</div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Tren Persentase Kehadiran Bulan Ini</h2>
+    <div class="panel-sub">Persentase teknisi masuk kerja per hari (1 bulan)</div>
+    <div class="trend-legend">
+      <span><span class="legend-dot" style="background:var(--cyan);"></span>% Kehadiran harian</span>
+      <span><span class="legend-dot" style="background:var(--muted-2);"></span>Rata-rata bulan ini</span>
+    </div>
+    <canvas id="trendChart" height="90"></canvas>
+  </div>
+</div>
+
+<!-- DAFTAR TEKNISI MASUK HARI INI -->
+<div class="panel" id="masukTodayPanel" style="margin-bottom:22px;">
+  <div class="schedule-controls" style="margin-bottom:12px;">
+    <div>
+      <h2 style="margin-bottom:2px;">Teknisi Masuk Hari Ini</h2>
+      <div class="panel-sub" style="margin-bottom:0;" id="masukTodaySub">-</div>
+    </div>
+    <div class="edit-hint">Otomatis mengikuti perubahan pada tabel Jadwal Teknisi di bawah</div>
+  </div>
+  <div class="table-scroll">
+    <table id="masukTodayTable" style="min-width:0;">
+      <thead>
+        <tr>
+          <th style="width:50px;">No</th>
+          <th class="name-col" style="position:static;">ID Teknisi</th>
+          <th class="name-col" style="position:static; text-align:left;">Nama Teknisi</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="masukTodayBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MONTHLY SCHEDULE -->
+<div class="panel schedule-panel">
+  <div class="schedule-controls">
+    <div>
+      <h2 style="margin-bottom:2px;">Jadwal Teknisi &mdash; 1 Bulan</h2>
+      <div class="panel-sub" style="margin-bottom:0;" id="scheduleMonthLabel">-</div>
+    </div>
+    <div class="legend-row">
+      <span class="legend-chip"><span class="legend-swatch st-M">M</span>Masuk</span>
+      <span class="legend-chip"><span class="legend-swatch st-L">L</span>Libur</span>
+      <span class="legend-chip"><span class="legend-swatch st-S">S</span>Sakit</span>
+      <span class="legend-chip"><span class="legend-swatch st-C">C</span>Cuti</span>
+      <span class="legend-chip"><span class="legend-swatch st-I">I</span>Izin</span>
+    </div>
+  </div>
+  <div class="schedule-controls" style="margin-top:-6px;">
+    <div class="edit-hint">&#9998;&#65039; Klik sel status untuk mengubah (M &rarr; L &rarr; S &rarr; C &rarr; I)</div>
+    <div class="schedule-actions">
+      <button class="btn" id="btnReset">&#8635; Reset ke Data Awal</button>
+      <button class="btn primary" id="btnExport">&#11015; Export Perubahan (JSON)</button>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table id="scheduleTable">
+      <thead><tr id="scheduleHeadRow"></tr></thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+  </div>
+  <div class="footnote">
+    <b>Catatan:</b> Seluruh data pada dashboard ini adalah data <b>dummy/contoh</b> untuk keperluan simulasi tampilan. Kolom hari ini ditandai dengan warna highlight biru muda pada tabel jadwal. Perubahan status yang kamu klik akan langsung memperbarui KPI, gauge, dan grafik tren &mdash; namun <b>hanya tersimpan selama tab ini terbuka</b> (belum tersambung ke database). Gunakan tombol <b>Export</b> untuk menyimpan hasil edit ke file JSON. Untuk versi produksi, sambungkan sumber data absensi (API/database) ke fungsi <code>generateDummyData()</code> dan ganti fungsi <code>saveEdit()</code> agar mengirim perubahan ke server.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= THEME SWITCH ================= */
+document.querySelectorAll('.theme-opt').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.body.setAttribute('data-theme', btn.dataset.theme);
+    document.querySelectorAll('.theme-opt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+/* ================= DUMMY DATA GENERATION ================= */
+const NAMES = [
+  "Ahmad Fauzi","Bayu Saputra","Chandra Wijaya","Dedi Kurniawan","Eko Prasetyo",
+  "Fajar Nugroho","Gilang Ramadhan","Hendra Setiawan","Irfan Maulana","Joko Susilo",
+  "Kevin Pratama","Lukman Hakim","Muhammad Rizki","Nanda Firmansyah","Oki Santoso",
+  "Putra Wibowo","Rian Hidayat","Sandi Kusuma","Taufik Hermawan","Umar Syahrul",
+  "Vino Alamsyah","Wahyu Ramadhan","Yoga Pratama","Zaki Ramadhani","Agus Salim"
+];
+
+const today = new Date();
+const YEAR = today.getFullYear();
+const MONTH = today.getMonth();
+const DAYS_IN_MONTH = new Date(YEAR, MONTH+1, 0).getDate();
+const TODAY_DATE = today.getDate();
+
+const STATUS = {
+  M:{key:'M', label:'Masuk', color:'#3fd393'},
+  L:{key:'L', label:'Libur', color:'#7488a6'},
+  S:{key:'S', label:'Sakit', color:'#f0616a'},
+  C:{key:'C', label:'Cuti', color:'#a48af0'},
+  I:{key:'I', label:'Izin', color:'#f2b13c'},
+};
+
+function seededRandom(seed){
+  let s = seed;
+  return function(){
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+function generateDummyData(){
+  const technicians = NAMES.map((name, idx) => {
+    const rand = seededRandom(idx*97 + 13);
+    // fixed weekly off-day pattern per technician (1 day/week libur), offset varies
+    const offDay = idx % 7;
+    const schedule = [];
+    for(let d=1; d<=DAYS_IN_MONTH; d++){
+      const date = new Date(YEAR, MONTH, d);
+      const dow = date.getDay(); // 0=Sun
+      let status = 'M';
+      if(dow === offDay || dow === 0 && offDay !== 0 && rand() < 0.15){
+        status = 'L';
+      } else {
+        const r = rand();
+        if(r < 0.045) status = 'S';
+        else if(r < 0.07) status = 'C';
+        else if(r < 0.095) status = 'I';
+        else status = 'M';
+      }
+      schedule.push(status);
+    }
+    return { name, id: 'TKN' + String(idx+1).padStart(3,'0'), schedule };
+  });
+  return technicians;
+}
+
+const technicians = generateDummyData();
+const TOTAL_TEKNISI = technicians.length;
+
+/* ================= TODAY STATS ================= */
+function countToday(){
+  const counts = {M:0,L:0,S:0,C:0,I:0};
+  technicians.forEach(t=>{
+    const st = t.schedule[TODAY_DATE-1];
+    counts[st]++;
+  });
+  return counts;
+}
+const todayCounts = countToday();
+
+function pct(n){ return TOTAL_TEKNISI ? Math.round((n/TOTAL_TEKNISI)*1000)/10 : 0; }
+
+document.getElementById('kpiTotal').textContent = TOTAL_TEKNISI;
+document.getElementById('kpiMasuk').textContent = todayCounts.M;
+document.getElementById('kpiLibur').textContent = todayCounts.L;
+document.getElementById('kpiSakit').textContent = todayCounts.S;
+document.getElementById('kpiCuti').textContent = todayCounts.C;
+document.getElementById('kpiIzin').textContent = todayCounts.I;
+
+document.getElementById('kpiMasukPct').textContent = pct(todayCounts.M) + '% dari total';
+document.getElementById('kpiLiburPct').textContent = pct(todayCounts.L) + '% dari total';
+document.getElementById('kpiSakitPct').textContent = pct(todayCounts.S) + '% dari total';
+document.getElementById('kpiCutiPct').textContent = pct(todayCounts.C) + '% dari total';
+document.getElementById('kpiIzinPct').textContent = pct(todayCounts.I) + '% dari total';
+
+/* ================= CLOCK ================= */
+const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+function updateClock(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('clockDate').textContent = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ================= GAUGE CHART ================= */
+const attendancePct = pct(todayCounts.M);
+document.getElementById('gaugeNum').textContent = attendancePct + '%';
+document.getElementById('gaugeCaption').textContent = `${todayCounts.M} dari ${TOTAL_TEKNISI} teknisi masuk`;
+
+const gaugeChart = new Chart(document.getElementById('gaugeChart'), {
+  type: 'doughnut',
+  data: {
+    datasets: [{
+      data: [attendancePct, 100-attendancePct],
+      backgroundColor: ['#37c9dd', '#182a42'],
+      borderWidth: 0,
+      circumference: 270,
+      rotation: 225,
+      cutout: '78%',
+    }]
+  },
+  options: {
+    responsive:false,
+    plugins:{legend:{display:false}, tooltip:{enabled:false}},
+  }
+});
+
+/* ================= TREND CHART (daily % attendance whole month) ================= */
+const dailyPct = [];
+const dayLabels = [];
+for(let d=1; d<=DAYS_IN_MONTH; d++){
+  let masukCount = 0;
+  technicians.forEach(t=>{ if(t.schedule[d-1] === 'M') masukCount++; });
+  dailyPct.push(Math.round((masukCount/TOTAL_TEKNISI)*1000)/10);
+  dayLabels.push(d);
+}
+const avgPct = Math.round((dailyPct.reduce((a,b)=>a+b,0)/dailyPct.length)*10)/10;
+
+const trendChart = new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels: dayLabels,
+    datasets:[
+      {
+        label:'% Kehadiran',
+        data: dailyPct,
+        borderColor:'#37c9dd',
+        backgroundColor:'rgba(55,201,221,0.12)',
+        pointRadius: dayLabels.map(d => d===TODAY_DATE ? 5 : 0),
+        pointBackgroundColor:'#37c9dd',
+        pointBorderColor:'#0c1626',
+        pointBorderWidth: 2,
+        borderWidth:2.2,
+        tension:0.35,
+        fill:true,
+      },
+      {
+        label:'Rata-rata',
+        data: dayLabels.map(()=>avgPct),
+        borderColor:'#5c7192',
+        borderDash:[5,5],
+        borderWidth:1.3,
+        pointRadius:0,
+        fill:false,
+      }
+    ]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{
+        grid:{color:'#182a42'},
+        ticks:{color:'#5c7192', font:{size:10.5}, maxTicksLimit:15},
+        title:{display:true, text:'Tanggal', color:'#5c7192', font:{size:11}}
+      },
+      y:{
+        grid:{color:'#182a42'},
+        ticks:{color:'#5c7192', font:{size:10.5}, callback:v=>v+'%'},
+        min:Math.max(0, Math.min(...dailyPct)-10),
+        max:100,
+      }
+    }
+  }
+});
+document.querySelector('#trendChart').parentElement.style.height='240px';
+
+/* ================= MONTHLY SCHEDULE TABLE ================= */
+document.getElementById('scheduleMonthLabel').textContent = `${BULAN[MONTH]} ${YEAR} \u2014 ${DAYS_IN_MONTH} hari`;
+
+const headRow = document.getElementById('scheduleHeadRow');
+let headHtml = `<th class="name-col">TEKNISI</th>`;
+for(let d=1; d<=DAYS_IN_MONTH; d++){
+  const dow = new Date(YEAR, MONTH, d).getDay();
+  const isToday = d === TODAY_DATE;
+  headHtml += `<th class="${isToday?'today-col':''}">${d}<br><span style="font-size:9px;">${HARI[dow].slice(0,3)}</span></th>`;
+}
+headRow.innerHTML = headHtml;
+
+const body = document.getElementById('scheduleBody');
+function renderScheduleBody(){
+  let bodyHtml = '';
+  technicians.forEach((t, tIdx)=>{
+    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<br><span style="font-size:10px;color:var(--muted-2);">${t.id}</span></td>`;
+    t.schedule.forEach((st, i)=>{
+      const d = i+1;
+      const isToday = d === TODAY_DATE;
+      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-tech="${tIdx}" data-day="${i}"><span class="status-pill st-${st}">${st}</span></td>`;
+    });
+    bodyHtml += `</tr>`;
+  });
+  body.innerHTML = bodyHtml;
+}
+renderScheduleBody();
+
+/* ================= DAFTAR TEKNISI MASUK HARI INI ================= */
+function renderMasukTodayTable(){
+  const masukList = technicians
+    .filter(t => t.schedule[TODAY_DATE-1] === 'M')
+    .sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('masukTodaySub').textContent =
+    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
+
+  const tbody = document.getElementById('masukTodayBody');
+  if(masukList.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted-2); padding:16px;">Tidak ada teknisi yang masuk hari ini.</td></tr>`;
+    return;
+  }
+  let html = '';
+  masukList.forEach((t, idx) => {
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td style="text-align:left; font-weight:600; color:var(--muted);">${t.id}</td>
+      <td style="text-align:left; font-weight:600;">${t.name}</td>
+      <td><span class="status-pill st-M" style="cursor:default;">M</span></td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+renderMasukTodayTable();
+
+/* ================= EDIT / RECALCULATE LOGIC ================= */
+const STATUS_ORDER = ['M','L','S','C','I'];
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function recalcAll(){
+  // recompute today's counts
+  const counts = {M:0,L:0,S:0,C:0,I:0};
+  technicians.forEach(t=>{ counts[t.schedule[TODAY_DATE-1]]++; });
+
+  document.getElementById('kpiMasuk').textContent = counts.M;
+  document.getElementById('kpiLibur').textContent = counts.L;
+  document.getElementById('kpiSakit').textContent = counts.S;
+  document.getElementById('kpiCuti').textContent = counts.C;
+  document.getElementById('kpiIzin').textContent = counts.I;
+  document.getElementById('kpiMasukPct').textContent = pct(counts.M) + '% dari total';
+  document.getElementById('kpiLiburPct').textContent = pct(counts.L) + '% dari total';
+  document.getElementById('kpiSakitPct').textContent = pct(counts.S) + '% dari total';
+  document.getElementById('kpiCutiPct').textContent = pct(counts.C) + '% dari total';
+  document.getElementById('kpiIzinPct').textContent = pct(counts.I) + '% dari total';
+
+  // recompute gauge
+  const newAttendancePct = pct(counts.M);
+  gaugeChart.data.datasets[0].data = [newAttendancePct, 100-newAttendancePct];
+  gaugeChart.update();
+  document.getElementById('gaugeNum').textContent = newAttendancePct + '%';
+  document.getElementById('gaugeCaption').textContent = `${counts.M} dari ${TOTAL_TEKNISI} teknisi masuk`;
+
+  // recompute trend line (whole month)
+  const newDaily = [];
+  for(let d=1; d<=DAYS_IN_MONTH; d++){
+    let m = 0;
+    technicians.forEach(t=>{ if(t.schedule[d-1]==='M') m++; });
+    newDaily.push(Math.round((m/TOTAL_TEKNISI)*1000)/10);
+  }
+  const newAvg = Math.round((newDaily.reduce((a,b)=>a+b,0)/newDaily.length)*10)/10;
+  trendChart.data.datasets[0].data = newDaily;
+  trendChart.data.datasets[1].data = dayLabels.map(()=>newAvg);
+  trendChart.update();
+
+  // recompute daftar teknisi masuk hari ini
+  renderMasukTodayTable();
+}
+
+// Save/log edit — replace this with an API call for production use
+function saveEdit(techIdx, dayIdx, newStatus){
+  const t = technicians[techIdx];
+  console.log(`[EDIT] ${t.name} (${t.id}) tanggal ${dayIdx+1}: -> ${newStatus}`);
+  // TODO produksi: kirim ke server, contoh:
+  // fetch('/api/absensi/update', { method:'POST', headers:{'Content-Type':'application/json'},
+  //   body: JSON.stringify({ technician_id:t.id, date: dayIdx+1, status: newStatus }) });
+}
+
+body.addEventListener('click', (e)=>{
+  const cell = e.target.closest('.editable-cell');
+  if(!cell) return;
+  const tIdx = parseInt(cell.dataset.tech, 10);
+  const dIdx = parseInt(cell.dataset.day, 10);
+  const t = technicians[tIdx];
+  const current = t.schedule[dIdx];
+  const nextIdx = (STATUS_ORDER.indexOf(current) + 1) % STATUS_ORDER.length;
+  const next = STATUS_ORDER[nextIdx];
+  t.schedule[dIdx] = next;
+
+  const pill = cell.querySelector('.status-pill');
+  pill.className = `status-pill st-${next}`;
+  pill.textContent = next;
+
+  saveEdit(tIdx, dIdx, next);
+  recalcAll();
+
+  if(dIdx === TODAY_DATE-1){
+    showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
+  } else {
+    showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
+  }
+});
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Reset seluruh perubahan kembali ke data awal (dummy)?')) return;
+  const fresh = generateDummyData();
+  technicians.forEach((t, i)=>{ t.schedule = fresh[i].schedule; });
+  renderScheduleBody();
+  recalcAll();
+  showToast('Data jadwal direset ke kondisi awal.');
+});
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const exportData = technicians.map(t => ({
+    id: t.id,
+    name: t.name,
+    schedule: t.schedule.map((st, i) => ({ tanggal: i+1, status: st, keterangan: STATUS[st].label }))
+  }));
+  const blob = new Blob([JSON.stringify({ bulan: `${BULAN[MONTH]} ${YEAR}`, data: exportData }, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `jadwal_teknisi_${BULAN[MONTH]}_${YEAR}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Perubahan berhasil di-export ke file JSON.');
+});
+</script>
+
+</body>
+</html>
