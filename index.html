@@ -163,11 +163,11 @@
   /* KPI GRID */
   .kpi-grid{
     display:grid;
-    grid-template-columns:repeat(7,1fr);
+    grid-template-columns:repeat(8,1fr);
     gap:14px;
     margin-bottom:22px;
   }
-  @media(max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+  @media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
   @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
 
   .kpi-card{
@@ -215,6 +215,7 @@
   .kpi-card.cuti{--accent:var(--violet);}
   .kpi-card.izin{--accent:var(--amber);}
   .kpi-card.pm{--accent:var(--pm);}
+  .kpi-card.kosong{--accent:var(--muted-2);}
   .kpi-card.masuk .kpi-value{color:var(--green);}
   .kpi-card.sakit .kpi-value{color:var(--red);}
   .kpi-card.cuti .kpi-value{color:var(--violet);}
@@ -222,6 +223,7 @@
   .kpi-card.pm .kpi-value{color:var(--pm);}
   .kpi-card.libur .kpi-value{color:var(--slate);}
   .kpi-card.total .kpi-value{color:var(--cyan);}
+  .kpi-card.kosong .kpi-value{color:var(--muted-2);}
 
   /* MAIN ROW: gauge + trend */
   .main-row{
@@ -391,6 +393,105 @@
   .st-C{background:var(--violet);}
   .st-I{background:var(--amber);}
   .st-PM{background:var(--pm);}
+  .st-X{background:var(--panel-2);color:var(--muted-2);border:1px dashed var(--border);}
+
+  /* MONTH CONTROL BAR */
+  .month-bar{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-bottom:16px;
+  }
+  .month-bar label{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .month-bar select{
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 10px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .month-bar select:focus{outline:1px solid var(--cyan);}
+  .month-tag{
+    font-size:11px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:20px;
+    letter-spacing:0.3px;
+  }
+  .month-tag.filled{background:var(--green-dim);color:var(--green);}
+  .month-tag.empty{background:var(--panel);color:var(--muted-2);border:1px dashed var(--border);}
+  .month-tag.current{background:var(--cyan-dim);color:var(--cyan);}
+
+  /* ADD TEKNISI FORM */
+  .add-tech-form{
+    display:none;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:14px;
+  }
+  .add-tech-form.show{display:flex;}
+  .add-tech-form input{
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    padding:8px 10px;
+    border-radius:7px;
+    min-width:150px;
+  }
+  .add-tech-form input:focus{outline:1px solid var(--cyan);}
+  .del-tech-btn{
+    background:none;border:none;color:var(--muted-2);cursor:pointer;
+    font-size:13px;margin-left:6px;line-height:1;vertical-align:middle;
+  }
+  .del-tech-btn:hover{color:var(--red);}
+
+  /* RIWAYAT BULAN */
+  .history-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  .history-chip{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:11.5px;
+    cursor:pointer;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .history-chip:hover{border-color:var(--cyan);color:var(--text);}
+  .history-chip.active{border-color:var(--cyan);background:var(--cyan-dim);color:var(--cyan);}
+  .history-chip b{color:inherit;}
+  .save-indicator{
+    font-size:11px;
+    color:var(--muted-2);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .save-indicator.saving{color:var(--amber);}
+  .save-indicator.saved{color:var(--green);}
 
   .schedule-actions{
     display:flex;
@@ -470,7 +571,7 @@
       <span style="color:var(--muted);font-size:12px;">diperbarui otomatis</span>
     </div>
     <h1>Dashboard Kehadiran Teknisi</h1>
-    <div class="sub">Monitoring absensi &amp; jadwal teknisi lapangan &mdash; data contoh (dummy)</div>
+    <div class="sub">Monitoring absensi &amp; jadwal teknisi lapangan &mdash; input manual per bulan, tersimpan otomatis</div>
   </div>
   <div class="clock-box">
     <div class="theme-switch" id="themeSwitch">
@@ -518,6 +619,11 @@
     <div class="kpi-label"><span>Piket Malam</span><span class="kpi-icon">&#127762;</span></div>
     <div class="kpi-value" id="kpiPM">0</div>
     <div class="kpi-foot" id="kpiPMPct">0% dari total</div>
+  </div>
+  <div class="kpi-card kosong">
+    <div class="kpi-label"><span>Belum Diisi</span><span class="kpi-icon">&#10067;</span></div>
+    <div class="kpi-value" id="kpiKosong">0</div>
+    <div class="kpi-foot" id="kpiKosongPct">0% dari total</div>
   </div>
 </div>
 
@@ -569,12 +675,21 @@
 
 <!-- MONTHLY SCHEDULE -->
 <div class="panel schedule-panel">
+  <div class="month-bar">
+    <label for="monthSelector">&#128197; Bulan Aktif</label>
+    <select id="monthSelector"></select>
+    <span class="month-tag" id="monthStatusTag">-</span>
+    <span class="save-indicator" id="saveIndicator">&#9679; Tersimpan</span>
+    <span style="flex:1;"></span>
+    <button class="btn" id="btnCopyPrev" title="Salin jadwal dari bulan sebelumnya sebagai titik awal">&#8617; Salin dari Bulan Lalu</button>
+  </div>
   <div class="schedule-controls">
     <div>
       <h2 style="margin-bottom:2px;">Jadwal Teknisi &mdash; 1 Bulan</h2>
       <div class="panel-sub" style="margin-bottom:0;" id="scheduleMonthLabel">-</div>
     </div>
     <div class="legend-row">
+      <span class="legend-chip"><span class="legend-swatch st-X">&ndash;</span>Belum Diisi</span>
       <span class="legend-chip"><span class="legend-swatch st-M">M</span>Masuk</span>
       <span class="legend-chip"><span class="legend-swatch st-L">L</span>Libur</span>
       <span class="legend-chip"><span class="legend-swatch st-S">S</span>Sakit</span>
@@ -584,11 +699,18 @@
     </div>
   </div>
   <div class="schedule-controls" style="margin-top:-6px;">
-    <div class="edit-hint">&#9998;&#65039; Klik sel status untuk mengubah (M &rarr; L &rarr; S &rarr; C &rarr; I)</div>
+    <div class="edit-hint">&#9998;&#65039; Klik sel status untuk mengubah (&ndash; &rarr; M &rarr; L &rarr; S &rarr; C &rarr; I &rarr; PM)</div>
     <div class="schedule-actions">
-      <button class="btn" id="btnReset">&#8635; Reset ke Data Awal</button>
-      <button class="btn primary" id="btnExport">&#11015; Export Perubahan (JSON)</button>
+      <button class="btn" id="btnAddTech">&#43; Tambah Teknisi</button>
+      <button class="btn" id="btnReset">&#8635; Kosongkan Bulan Ini</button>
+      <button class="btn primary" id="btnExport">&#11015; Export (JSON)</button>
     </div>
+  </div>
+  <div class="add-tech-form" id="addTechForm">
+    <input type="text" id="newTechId" placeholder="ID Teknisi (mis. TKN026)">
+    <input type="text" id="newTechName" placeholder="Nama Teknisi">
+    <button class="btn primary" id="btnSaveNewTech">Simpan</button>
+    <button class="btn" id="btnCancelNewTech">Batal</button>
   </div>
   <div class="table-scroll">
     <table id="scheduleTable">
@@ -597,8 +719,9 @@
     </table>
   </div>
   <div class="footnote">
-    <b>Catatan:</b> Seluruh data pada dashboard ini adalah data <b>dummy/contoh</b> untuk keperluan simulasi tampilan. Kolom hari ini ditandai dengan warna highlight biru muda pada tabel jadwal. Perubahan status yang kamu klik akan langsung memperbarui KPI, gauge, dan grafik tren &mdash; namun <b>hanya tersimpan selama tab ini terbuka</b> (belum tersambung ke database). Gunakan tombol <b>Export</b> untuk menyimpan hasil edit ke file JSON. Untuk versi produksi, sambungkan sumber data absensi (API/database) ke fungsi <code>generateDummyData()</code> dan ganti fungsi <code>saveEdit()</code> agar mengirim perubahan ke server.
+    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus.
   </div>
+  <div class="history-row" id="historyRow"></div>
 </div>
 
 <!-- REKAP KEHADIRAN PER TEKNISI -->
@@ -623,6 +746,7 @@
           <th>Cuti</th>
           <th>Izin</th>
           <th>Piket Malam</th>
+          <th>Belum Diisi</th>
           <th>Total Hari</th>
           <th>% Kehadiran</th>
         </tr>
@@ -649,7 +773,7 @@ document.querySelectorAll('.theme-opt').forEach(btn=>{
   });
 });
 
-/* ================= DUMMY DATA GENERATION ================= */
+/* ================= ROSTER TEKNISI (default awal, hanya dipakai sekali saat pertama kali dibuka) ================= */
 const NAMES = [
   "Ahmad Fauzi","Bayu Saputra","Chandra Wijaya","Dedi Kurniawan","Eko Prasetyo",
   "Fajar Nugroho","Gilang Ramadhan","Hendra Setiawan","Irfan Maulana","Joko Susilo",
@@ -658,13 +782,8 @@ const NAMES = [
   "Vino Alamsyah","Wahyu Ramadhan","Yoga Pratama","Zaki Ramadhani","Agus Salim"
 ];
 
-const today = new Date();
-const YEAR = today.getFullYear();
-const MONTH = today.getMonth();
-const DAYS_IN_MONTH = new Date(YEAR, MONTH+1, 0).getDate();
-const TODAY_DATE = today.getDate();
-
 const STATUS = {
+  X:{key:'X', label:'Belum Diisi', color:'#3a3f4a'},
   M:{key:'M', label:'Masuk', color:'#3fd393'},
   L:{key:'L', label:'Libur', color:'#7488a6'},
   S:{key:'S', label:'Sakit', color:'#f0616a'},
@@ -672,215 +791,230 @@ const STATUS = {
   I:{key:'I', label:'Izin', color:'#f2b13c'},
   PM:{key:'PM', label:'Piket Malam', color:'#ec7fb0'},
 };
+const STATUS_ORDER = ['X','M','L','S','C','I','PM'];
+const MIN_HARI_KERJA = 22; // ambang batas minimal hari kerja (Masuk + Piket Malam) per bulan
 
-function seededRandom(seed){
-  let s = seed;
-  return function(){
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
+const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+const REAL_TODAY = new Date();
+const REAL_YEAR = REAL_TODAY.getFullYear();
+const REAL_MONTH = REAL_TODAY.getMonth();
+const REAL_DATE = REAL_TODAY.getDate();
+
+/* ================= STORAGE HELPERS (persist via window.storage) ================= */
+async function storageGet(key, shared){
+  try{
+    const res = await window.storage.get(key, shared);
+    return res ? res.value : null;
+  }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  try{ await window.storage.set(key, value, shared); return true; }
+  catch(e){ console.error('Gagal menyimpan', key, e); return false; }
+}
+async function storageListKeys(prefix, shared){
+  try{
+    const res = await window.storage.list(prefix, shared);
+    return res && res.keys ? res.keys : [];
+  }catch(e){ return []; }
 }
 
-function generateDummyData(){
-  const technicians = NAMES.map((name, idx) => {
-    const rand = seededRandom(idx*97 + 13);
-    // fixed weekly off-day pattern per technician (1 day/week libur), offset varies
-    const offDay = idx % 7;
-    const schedule = [];
-    for(let d=1; d<=DAYS_IN_MONTH; d++){
-      const date = new Date(YEAR, MONTH, d);
-      const dow = date.getDay(); // 0=Sun
-      let status = 'M';
-      if(dow === offDay || dow === 0 && offDay !== 0 && rand() < 0.15){
-        status = 'L';
-      } else {
-        const r = rand();
-        if(r < 0.045) status = 'S';
-        else if(r < 0.07) status = 'C';
-        else if(r < 0.095) status = 'I';
-        else if(r < 0.13) status = 'PM';
-        else status = 'M';
-      }
-      schedule.push(status);
+/* ================= ROSTER (daftar teknisi tetap, dipakai di semua bulan) ================= */
+let roster = [];
+async function ensureRoster(){
+  const stored = await storageGet('roster:teknisi', true);
+  if(stored){
+    try{ const parsed = JSON.parse(stored); if(Array.isArray(parsed) && parsed.length) return parsed; }
+    catch(e){ /* fallthrough to seed */ }
+  }
+  const seed = NAMES.map((name, idx) => ({ id: 'TKN' + String(idx+1).padStart(3,'0'), name }));
+  await storageSet('roster:teknisi', JSON.stringify(seed), true);
+  return seed;
+}
+async function persistRoster(){ await storageSet('roster:teknisi', JSON.stringify(roster), true); }
+
+/* ================= DATA JADWAL PER BULAN ================= */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function monthKey(y,m){ return `${y}-${pad2(m+1)}`; }
+
+async function loadMonthSchedules(y,m){
+  const raw = await storageGet('jadwal:'+monthKey(y,m), true);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+async function saveMonthSchedules(y,m, techs){
+  const data = techs.map(t => ({ id:t.id, schedule:t.schedule }));
+  await storageSet('jadwal:'+monthKey(y,m), JSON.stringify(data), true);
+}
+function buildTechnicians(scheduleData, daysInMonth){
+  const map = {};
+  (scheduleData || []).forEach(s => { map[s.id] = s.schedule; });
+  return roster.map(r => {
+    let sched = map[r.id];
+    if(!sched || sched.length !== daysInMonth){
+      const base = (sched || []).slice(0, daysInMonth);
+      while(base.length < daysInMonth) base.push('X');
+      sched = base;
     }
-    return { name, id: 'TKN' + String(idx+1).padStart(3,'0'), schedule };
+    return { id: r.id, name: r.name, schedule: sched };
   });
-  return technicians;
 }
 
-const technicians = generateDummyData();
-const TOTAL_TEKNISI = technicians.length;
-
-/* ================= TODAY STATS ================= */
-function countToday(){
-  const counts = {M:0,L:0,S:0,C:0,I:0,PM:0};
-  technicians.forEach(t=>{
-    const st = t.schedule[TODAY_DATE-1];
-    counts[st]++;
-  });
-  return counts;
-}
-const todayCounts = countToday();
+/* ================= STATE AKTIF (bulan yang sedang dilihat/diisi) ================= */
+let YEAR, MONTH, DAYS_IN_MONTH, TODAY_DATE, IS_CURRENT_MONTH;
+let technicians = [];
+let TOTAL_TEKNISI = 0;
 
 function pct(n){ return TOTAL_TEKNISI ? Math.round((n/TOTAL_TEKNISI)*1000)/10 : 0; }
 
-document.getElementById('kpiTotal').textContent = TOTAL_TEKNISI;
-document.getElementById('kpiMasuk').textContent = todayCounts.M;
-document.getElementById('kpiLibur').textContent = todayCounts.L;
-document.getElementById('kpiSakit').textContent = todayCounts.S;
-document.getElementById('kpiCuti').textContent = todayCounts.C;
-document.getElementById('kpiIzin').textContent = todayCounts.I;
-document.getElementById('kpiPM').textContent = todayCounts.PM;
-
-document.getElementById('kpiMasukPct').textContent = pct(todayCounts.M) + '% dari total';
-document.getElementById('kpiLiburPct').textContent = pct(todayCounts.L) + '% dari total';
-document.getElementById('kpiSakitPct').textContent = pct(todayCounts.S) + '% dari total';
-document.getElementById('kpiCutiPct').textContent = pct(todayCounts.C) + '% dari total';
-document.getElementById('kpiIzinPct').textContent = pct(todayCounts.I) + '% dari total';
-document.getElementById('kpiPMPct').textContent = pct(todayCounts.PM) + '% dari total';
-
 /* ================= CLOCK ================= */
-const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 function updateClock(){
   const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  document.getElementById('clockTime').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const p = n => String(n).padStart(2,'0');
+  document.getElementById('clockTime').textContent = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
   document.getElementById('clockDate').textContent = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
 }
 updateClock();
 setInterval(updateClock, 1000);
 
-/* ================= GAUGE CHART ================= */
-const hadirDenomToday = TOTAL_TEKNISI - todayCounts.L;
-const attendancePct = hadirDenomToday > 0 ? Math.round(((todayCounts.M + todayCounts.PM)/hadirDenomToday)*1000)/10 : 0;
-document.getElementById('gaugeNum').textContent = attendancePct + '%';
-document.getElementById('gaugeCaption').textContent = `${todayCounts.M + todayCounts.PM} dari ${hadirDenomToday} teknisi masuk (di luar libur)`;
-
-const gaugeChart = new Chart(document.getElementById('gaugeChart'), {
-  type: 'doughnut',
-  data: {
-    datasets: [{
-      data: [attendancePct, 100-attendancePct],
-      backgroundColor: ['#37c9dd', '#182a42'],
-      borderWidth: 0,
-      circumference: 270,
-      rotation: 225,
-      cutout: '78%',
-    }]
-  },
-  options: {
-    responsive:false,
-    plugins:{legend:{display:false}, tooltip:{enabled:false}},
-  }
-});
-
-/* ================= TREND CHART (daily % attendance whole month) ================= */
-const dailyPct = [];
-const dayLabels = [];
-for(let d=1; d<=DAYS_IN_MONTH; d++){
-  let masukCount = 0, liburCount = 0;
-  technicians.forEach(t=>{
-    const st = t.schedule[d-1];
-    if(st === 'M' || st === 'PM') masukCount++;
-    else if(st === 'L') liburCount++;
-  });
-  const denom = TOTAL_TEKNISI - liburCount;
-  dailyPct.push(denom > 0 ? Math.round((masukCount/denom)*1000)/10 : 0);
-  dayLabels.push(d);
+/* ================= RENDER: KPI ================= */
+function computeRefCounts(){
+  const counts = {X:0,M:0,L:0,S:0,C:0,I:0,PM:0};
+  technicians.forEach(t=>{ counts[t.schedule[TODAY_DATE-1]]++; });
+  return counts;
 }
-const avgPct = Math.round((dailyPct.reduce((a,b)=>a+b,0)/dailyPct.length)*10)/10;
-
-const trendChart = new Chart(document.getElementById('trendChart'), {
-  type:'line',
-  data:{
-    labels: dayLabels,
-    datasets:[
-      {
-        label:'% Kehadiran',
-        data: dailyPct,
-        borderColor:'#37c9dd',
-        backgroundColor:'rgba(55,201,221,0.12)',
-        pointRadius: dayLabels.map(d => d===TODAY_DATE ? 5 : 0),
-        pointBackgroundColor:'#37c9dd',
-        pointBorderColor:'#0c1626',
-        pointBorderWidth: 2,
-        borderWidth:2.2,
-        tension:0.35,
-        fill:true,
-      },
-      {
-        label:'Rata-rata',
-        data: dayLabels.map(()=>avgPct),
-        borderColor:'#5c7192',
-        borderDash:[5,5],
-        borderWidth:1.3,
-        pointRadius:0,
-        fill:false,
-      }
-    ]
-  },
-  options:{
-    responsive:true,
-    maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{
-        grid:{color:'#182a42'},
-        ticks:{color:'#5c7192', font:{size:10.5}, maxTicksLimit:15},
-        title:{display:true, text:'Tanggal', color:'#5c7192', font:{size:11}}
-      },
-      y:{
-        grid:{color:'#182a42'},
-        ticks:{color:'#5c7192', font:{size:10.5}, callback:v=>v+'%'},
-        min:Math.max(0, Math.min(...dailyPct)-10),
-        max:100,
-      }
-    }
-  }
-});
-document.querySelector('#trendChart').parentElement.style.height='240px';
-
-/* ================= MONTHLY SCHEDULE TABLE ================= */
-document.getElementById('scheduleMonthLabel').textContent = `${BULAN[MONTH]} ${YEAR} \u2014 ${DAYS_IN_MONTH} hari`;
-
-const headRow = document.getElementById('scheduleHeadRow');
-let headHtml = `<th class="name-col">TEKNISI</th>`;
-for(let d=1; d<=DAYS_IN_MONTH; d++){
-  const dow = new Date(YEAR, MONTH, d).getDay();
-  const isToday = d === TODAY_DATE;
-  headHtml += `<th class="${isToday?'today-col':''}">${d}<br><span style="font-size:9px;">${HARI[dow].slice(0,3)}</span></th>`;
+function renderKPI(){
+  const counts = computeRefCounts();
+  document.getElementById('kpiTotal').textContent = TOTAL_TEKNISI;
+  document.getElementById('kpiMasuk').textContent = counts.M;
+  document.getElementById('kpiLibur').textContent = counts.L;
+  document.getElementById('kpiSakit').textContent = counts.S;
+  document.getElementById('kpiCuti').textContent = counts.C;
+  document.getElementById('kpiIzin').textContent = counts.I;
+  document.getElementById('kpiPM').textContent = counts.PM;
+  document.getElementById('kpiKosong').textContent = counts.X;
+  document.getElementById('kpiMasukPct').textContent = pct(counts.M) + '% dari total';
+  document.getElementById('kpiLiburPct').textContent = pct(counts.L) + '% dari total';
+  document.getElementById('kpiSakitPct').textContent = pct(counts.S) + '% dari total';
+  document.getElementById('kpiCutiPct').textContent = pct(counts.C) + '% dari total';
+  document.getElementById('kpiIzinPct').textContent = pct(counts.I) + '% dari total';
+  document.getElementById('kpiPMPct').textContent = pct(counts.PM) + '% dari total';
+  document.getElementById('kpiKosongPct').textContent = pct(counts.X) + '% dari total';
+  return counts;
 }
-headRow.innerHTML = headHtml;
 
-const body = document.getElementById('scheduleBody');
+/* ================= RENDER: GAUGE ================= */
+let gaugeChart = null;
+function renderGauge(counts){
+  const denom = TOTAL_TEKNISI - counts.L;
+  const attendancePct = denom > 0 ? Math.round(((counts.M + counts.PM)/denom)*1000)/10 : 0;
+  document.getElementById('gaugeNum').textContent = attendancePct + '%';
+  document.getElementById('gaugeCaption').textContent = IS_CURRENT_MONTH
+    ? `${counts.M + counts.PM} dari ${denom} teknisi masuk (di luar libur) — hari ini`
+    : `${counts.M + counts.PM} dari ${denom} teknisi masuk (di luar libur) — tanggal ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
+  if(!gaugeChart){
+    gaugeChart = new Chart(document.getElementById('gaugeChart'), {
+      type: 'doughnut',
+      data: { datasets: [{ data:[attendancePct, 100-attendancePct], backgroundColor:['#37c9dd','#182a42'], borderWidth:0, circumference:270, rotation:225, cutout:'78%' }] },
+      options: { responsive:false, plugins:{legend:{display:false}, tooltip:{enabled:false}} }
+    });
+  } else {
+    gaugeChart.data.datasets[0].data = [attendancePct, 100-attendancePct];
+    gaugeChart.update();
+  }
+}
+
+/* ================= RENDER: TREND ================= */
+let trendChart = null;
+function renderTrend(){
+  const dailyPct = [], dayLabels = [];
+  for(let d=1; d<=DAYS_IN_MONTH; d++){
+    let masukCount = 0, liburCount = 0;
+    technicians.forEach(t=>{
+      const st = t.schedule[d-1];
+      if(st === 'M' || st === 'PM') masukCount++;
+      else if(st === 'L') liburCount++;
+    });
+    const denom = TOTAL_TEKNISI - liburCount;
+    dailyPct.push(denom > 0 ? Math.round((masukCount/denom)*1000)/10 : 0);
+    dayLabels.push(d);
+  }
+  const avgPct = dailyPct.length ? Math.round((dailyPct.reduce((a,b)=>a+b,0)/dailyPct.length)*10)/10 : 0;
+  const pointRadii = dayLabels.map(d => (IS_CURRENT_MONTH && d===TODAY_DATE) ? 5 : 0);
+
+  if(!trendChart){
+    trendChart = new Chart(document.getElementById('trendChart'), {
+      type:'line',
+      data:{
+        labels: dayLabels,
+        datasets:[
+          { label:'% Kehadiran', data:dailyPct, borderColor:'#37c9dd', backgroundColor:'rgba(55,201,221,0.12)',
+            pointRadius:pointRadii, pointBackgroundColor:'#37c9dd', pointBorderColor:'#0c1626', pointBorderWidth:2,
+            borderWidth:2.2, tension:0.35, fill:true },
+          { label:'Rata-rata', data:dayLabels.map(()=>avgPct), borderColor:'#5c7192', borderDash:[5,5], borderWidth:1.3, pointRadius:0, fill:false }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales:{
+          x:{ grid:{color:'#182a42'}, ticks:{color:'#5c7192', font:{size:10.5}, maxTicksLimit:15}, title:{display:true, text:'Tanggal', color:'#5c7192', font:{size:11}} },
+          y:{ grid:{color:'#182a42'}, ticks:{color:'#5c7192', font:{size:10.5}, callback:v=>v+'%'}, min:Math.max(0, Math.min(...dailyPct)-10), max:100 }
+        }
+      }
+    });
+    document.querySelector('#trendChart').parentElement.style.height='240px';
+  } else {
+    trendChart.data.labels = dayLabels;
+    trendChart.data.datasets[0].data = dailyPct;
+    trendChart.data.datasets[0].pointRadius = pointRadii;
+    trendChart.data.datasets[1].data = dayLabels.map(()=>avgPct);
+    trendChart.options.scales.y.min = Math.max(0, Math.min(...dailyPct)-10);
+    trendChart.update();
+  }
+}
+
+/* ================= RENDER: TABEL JADWAL ================= */
+function renderScheduleHead(){
+  document.getElementById('scheduleMonthLabel').textContent =
+    `${BULAN[MONTH]} ${YEAR} — ${DAYS_IN_MONTH} hari${IS_CURRENT_MONTH ? ' (bulan berjalan)' : ''}`;
+  const headRow = document.getElementById('scheduleHeadRow');
+  let headHtml = `<th class="name-col">TEKNISI</th>`;
+  for(let d=1; d<=DAYS_IN_MONTH; d++){
+    const dow = new Date(YEAR, MONTH, d).getDay();
+    const isToday = IS_CURRENT_MONTH && d === TODAY_DATE;
+    headHtml += `<th class="${isToday?'today-col':''}">${d}<br><span style="font-size:9px;">${HARI[dow].slice(0,3)}</span></th>`;
+  }
+  headRow.innerHTML = headHtml;
+}
 function renderScheduleBody(){
+  const bodyEl = document.getElementById('scheduleBody');
   let bodyHtml = '';
   technicians.forEach((t, tIdx)=>{
-    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<br><span style="font-size:10px;color:var(--muted-2);">${t.id}</span></td>`;
+    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<button class="del-tech-btn" data-delidx="${tIdx}" title="Hapus teknisi dari roster">&times;</button><br><span style="font-size:10px;color:var(--muted-2);">${t.id}</span></td>`;
     t.schedule.forEach((st, i)=>{
       const d = i+1;
-      const isToday = d === TODAY_DATE;
-      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-tech="${tIdx}" data-day="${i}"><span class="status-pill st-${st}">${st}</span></td>`;
+      const isToday = IS_CURRENT_MONTH && d === TODAY_DATE;
+      const label = st === 'X' ? '&ndash;' : st;
+      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-tech="${tIdx}" data-day="${i}"><span class="status-pill st-${st}">${label}</span></td>`;
     });
     bodyHtml += `</tr>`;
   });
-  body.innerHTML = bodyHtml;
+  bodyEl.innerHTML = bodyHtml;
 }
-renderScheduleBody();
 
-/* ================= DAFTAR TEKNISI MASUK HARI INI ================= */
+/* ================= RENDER: TEKNISI MASUK HARI/TANGGAL AKTIF ================= */
 function renderMasukTodayTable(){
   const masukList = technicians
     .filter(t => t.schedule[TODAY_DATE-1] === 'M' || t.schedule[TODAY_DATE-1] === 'PM')
     .sort((a,b) => a.name.localeCompare(b.name));
 
   document.getElementById('masukTodaySub').textContent =
-    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
+    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}${IS_CURRENT_MONTH ? ' (hari ini)' : ''}`;
 
   const tbody = document.getElementById('masukTodayBody');
   if(masukList.length === 0){
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted-2); padding:16px;">Tidak ada teknisi yang masuk hari ini.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted-2); padding:16px;">Tidak ada teknisi yang masuk pada tanggal ini.</td></tr>`;
     return;
   }
   let html = '';
@@ -895,18 +1029,15 @@ function renderMasukTodayTable(){
   });
   tbody.innerHTML = html;
 }
-renderMasukTodayTable();
 
-/* ================= REKAP KEHADIRAN 1 BULAN ================= */
-const MIN_HARI_KERJA = 22; // ambang batas minimal hari kerja (Masuk + Piket Malam) per bulan
-
+/* ================= RENDER: REKAP KEHADIRAN 1 BULAN ================= */
 function renderRekapTable(){
   document.getElementById('rekapSub').textContent =
-    `Total ${DAYS_IN_MONTH} hari pada ${BULAN[MONTH]} ${YEAR} \u2014 ${TOTAL_TEKNISI} teknisi \u2014 target minimal ${MIN_HARI_KERJA} hari kerja/bulan`;
+    `Total ${DAYS_IN_MONTH} hari pada ${BULAN[MONTH]} ${YEAR} — ${TOTAL_TEKNISI} teknisi — target minimal ${MIN_HARI_KERJA} hari kerja/bulan`;
 
   let html = '';
   technicians.forEach((t, idx) => {
-    const c = {M:0,L:0,S:0,C:0,I:0,PM:0};
+    const c = {X:0,M:0,L:0,S:0,C:0,I:0,PM:0};
     t.schedule.forEach(st => c[st]++);
     const hariKerja = DAYS_IN_MONTH - c.L; // hari kerja efektif (di luar libur terjadwal)
     const hadirTotal = c.M + c.PM; // Piket Malam disamakan dengan Masuk
@@ -923,17 +1054,111 @@ function renderRekapTable(){
       <td style="color:var(--violet); font-weight:700;">${c.C}</td>
       <td style="color:var(--amber); font-weight:700;">${c.I}</td>
       <td style="color:var(--pm); font-weight:700;">${c.PM}</td>
+      <td style="color:var(--muted-2); font-weight:700;">${c.X}</td>
       <td style="color:var(--muted);">${DAYS_IN_MONTH}</td>
       <td style="font-weight:700; color:${memenuhiTarget?'var(--green)':'var(--red)'};">${kehadiranPct}%</td>
     </tr>`;
   });
   document.getElementById('rekapBody').innerHTML = html;
 }
-renderRekapTable();
 
-/* ================= EDIT / RECALCULATE LOGIC ================= */
-const STATUS_ORDER = ['M','L','S','C','I','PM'];
+/* ================= RENDER GABUNGAN ================= */
+function renderAll(){
+  renderScheduleHead();
+  renderScheduleBody();
+  const counts = renderKPI();
+  renderGauge(counts);
+  renderTrend();
+  renderMasukTodayTable();
+  renderRekapTable();
+}
+function refreshDerived(){
+  const counts = renderKPI();
+  renderGauge(counts);
+  renderTrend();
+  renderMasukTodayTable();
+  renderRekapTable();
+}
 
+/* ================= SIMPAN OTOMATIS ================= */
+async function persistCurrentMonth(){
+  const indicator = document.getElementById('saveIndicator');
+  indicator.textContent = '● Menyimpan...';
+  indicator.className = 'save-indicator saving';
+  await saveMonthSchedules(YEAR, MONTH, technicians);
+  indicator.textContent = '● Tersimpan';
+  indicator.className = 'save-indicator saved';
+  const tag = document.getElementById('monthStatusTag');
+  tag.textContent = IS_CURRENT_MONTH ? 'Bulan berjalan — ada data' : 'Ada data tersimpan';
+  tag.className = 'month-tag filled';
+  renderHistoryRow();
+}
+
+/* ================= PINDAH BULAN AKTIF ================= */
+async function switchMonth(y, m){
+  YEAR = y; MONTH = m;
+  DAYS_IN_MONTH = new Date(YEAR, MONTH+1, 0).getDate();
+  IS_CURRENT_MONTH = (YEAR === REAL_YEAR && MONTH === REAL_MONTH);
+  TODAY_DATE = IS_CURRENT_MONTH ? REAL_DATE : DAYS_IN_MONTH;
+
+  const scheduleData = await loadMonthSchedules(YEAR, MONTH);
+  technicians = buildTechnicians(scheduleData, DAYS_IN_MONTH);
+  TOTAL_TEKNISI = technicians.length;
+
+  const tag = document.getElementById('monthStatusTag');
+  if(scheduleData){ tag.textContent = 'Ada data tersimpan'; tag.className = 'month-tag filled'; }
+  else if(IS_CURRENT_MONTH){ tag.textContent = 'Bulan berjalan — belum diisi'; tag.className = 'month-tag current'; }
+  else { tag.textContent = 'Belum ada data'; tag.className = 'month-tag empty'; }
+
+  renderAll();
+  renderHistoryRow();
+}
+
+/* ================= SELECTOR BULAN ================= */
+function populateMonthSelector(){
+  const sel = document.getElementById('monthSelector');
+  let html = '';
+  for(let offset = -12; offset <= 3; offset++){
+    const d = new Date(REAL_YEAR, REAL_MONTH + offset, 1);
+    const y = d.getFullYear(), m = d.getMonth();
+    const label = `${BULAN[m]} ${y}` + ((y===REAL_YEAR && m===REAL_MONTH) ? ' (Bulan Berjalan)' : '');
+    html += `<option value="${y}-${m}" ${(y===YEAR && m===MONTH) ? 'selected' : ''}>${label}</option>`;
+  }
+  sel.innerHTML = html;
+  sel.addEventListener('change', async ()=>{
+    const [y,m] = sel.value.split('-').map(Number);
+    await switchMonth(y, m);
+  });
+}
+
+/* ================= RIWAYAT BULAN ================= */
+async function renderHistoryRow(){
+  const rawKeys = await storageListKeys('jadwal:', true);
+  const container = document.getElementById('historyRow');
+  if(!rawKeys || rawKeys.length === 0){
+    container.innerHTML = '<span style="font-size:11px;color:var(--muted-2);">Riwayat bulan akan muncul di sini setelah kamu mulai mengisi jadwal.</span>';
+    return;
+  }
+  const monthKeys = rawKeys.map(k => k.startsWith('jadwal:') ? k.slice(7) : k).filter(k => /^\d{4}-\d{2}$/.test(k));
+  const sorted = Array.from(new Set(monthKeys)).sort().reverse();
+  let html = '<div style="width:100%;font-size:11px;color:var(--muted-2);margin-bottom:2px;">Riwayat Bulan Tersimpan:</div>';
+  sorted.forEach(mk=>{
+    const [y,m] = mk.split('-').map(Number);
+    const label = `${BULAN[m-1]} ${y}`;
+    const active = (y===YEAR && (m-1)===MONTH) ? ' active' : '';
+    html += `<div class="history-chip${active}" data-y="${y}" data-m="${m-1}"><b>${label}</b></div>`;
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('.history-chip').forEach(chip=>{
+    chip.addEventListener('click', async ()=>{
+      const y = parseInt(chip.dataset.y,10), m = parseInt(chip.dataset.m,10);
+      document.getElementById('monthSelector').value = `${y}-${m}`;
+      await switchMonth(y, m);
+    });
+  });
+}
+
+/* ================= TOAST ================= */
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -942,60 +1167,22 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>t.classList.remove('show'), 1800);
 }
 
-function recalcAll(){
-  // recompute today's counts
-  const counts = {M:0,L:0,S:0,C:0,I:0,PM:0};
-  technicians.forEach(t=>{ counts[t.schedule[TODAY_DATE-1]]++; });
-
-  document.getElementById('kpiMasuk').textContent = counts.M;
-  document.getElementById('kpiLibur').textContent = counts.L;
-  document.getElementById('kpiSakit').textContent = counts.S;
-  document.getElementById('kpiCuti').textContent = counts.C;
-  document.getElementById('kpiIzin').textContent = counts.I;
-  document.getElementById('kpiPM').textContent = counts.PM;
-  document.getElementById('kpiMasukPct').textContent = pct(counts.M) + '% dari total';
-  document.getElementById('kpiLiburPct').textContent = pct(counts.L) + '% dari total';
-  document.getElementById('kpiSakitPct').textContent = pct(counts.S) + '% dari total';
-  document.getElementById('kpiCutiPct').textContent = pct(counts.C) + '% dari total';
-  document.getElementById('kpiIzinPct').textContent = pct(counts.I) + '% dari total';
-  document.getElementById('kpiPMPct').textContent = pct(counts.PM) + '% dari total';
-
-  // recompute gauge
-  const newAttendancePct = pct(counts.M + counts.PM);
-  gaugeChart.data.datasets[0].data = [newAttendancePct, 100-newAttendancePct];
-  gaugeChart.update();
-  document.getElementById('gaugeNum').textContent = newAttendancePct + '%';
-  document.getElementById('gaugeCaption').textContent = `${counts.M + counts.PM} dari ${TOTAL_TEKNISI} teknisi masuk`;
-
-  // recompute trend line (whole month)
-  const newDaily = [];
-  for(let d=1; d<=DAYS_IN_MONTH; d++){
-    let m = 0;
-    technicians.forEach(t=>{ const st = t.schedule[d-1]; if(st==='M' || st==='PM') m++; });
-    newDaily.push(Math.round((m/TOTAL_TEKNISI)*1000)/10);
+/* ================= EVENT: EDIT SEL / HAPUS TEKNISI ================= */
+document.getElementById('scheduleBody').addEventListener('click', async (e)=>{
+  const delBtn = e.target.closest('.del-tech-btn');
+  if(delBtn){
+    const idx = parseInt(delBtn.dataset.delidx, 10);
+    const t = technicians[idx];
+    if(!confirm(`Hapus ${t.name} (${t.id}) dari roster teknisi? Teknisi ini tidak akan tampil lagi di semua bulan.`)) return;
+    roster = roster.filter(r => r.id !== t.id);
+    await persistRoster();
+    technicians.splice(idx,1);
+    TOTAL_TEKNISI = technicians.length;
+    await persistCurrentMonth();
+    renderAll();
+    showToast(`${t.name} dihapus dari roster.`);
+    return;
   }
-  const newAvg = Math.round((newDaily.reduce((a,b)=>a+b,0)/newDaily.length)*10)/10;
-  trendChart.data.datasets[0].data = newDaily;
-  trendChart.data.datasets[1].data = dayLabels.map(()=>newAvg);
-  trendChart.update();
-
-  // recompute daftar teknisi masuk hari ini
-  renderMasukTodayTable();
-
-  // recompute rekap bulanan
-  renderRekapTable();
-}
-
-// Save/log edit — replace this with an API call for production use
-function saveEdit(techIdx, dayIdx, newStatus){
-  const t = technicians[techIdx];
-  console.log(`[EDIT] ${t.name} (${t.id}) tanggal ${dayIdx+1}: -> ${newStatus}`);
-  // TODO produksi: kirim ke server, contoh:
-  // fetch('/api/absensi/update', { method:'POST', headers:{'Content-Type':'application/json'},
-  //   body: JSON.stringify({ technician_id:t.id, date: dayIdx+1, status: newStatus }) });
-}
-
-body.addEventListener('click', (e)=>{
   const cell = e.target.closest('.editable-cell');
   if(!cell) return;
   const tIdx = parseInt(cell.dataset.tech, 10);
@@ -1008,27 +1195,72 @@ body.addEventListener('click', (e)=>{
 
   const pill = cell.querySelector('.status-pill');
   pill.className = `status-pill st-${next}`;
-  pill.textContent = next;
+  pill.innerHTML = next === 'X' ? '&ndash;' : next;
 
-  saveEdit(tIdx, dIdx, next);
-  recalcAll();
-
-  if(dIdx === TODAY_DATE-1){
-    showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
-  } else {
-    showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
-  }
+  await persistCurrentMonth();
+  refreshDerived();
+  showToast(`${t.name} — tanggal ${dIdx+1}: diubah ke "${STATUS[next].label}"`);
 });
 
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  if(!confirm('Reset seluruh perubahan kembali ke data awal (dummy)?')) return;
-  const fresh = generateDummyData();
-  technicians.forEach((t, i)=>{ t.schedule = fresh[i].schedule; });
-  renderScheduleBody();
-  recalcAll();
-  showToast('Data jadwal direset ke kondisi awal.');
+/* ================= EVENT: TAMBAH TEKNISI ================= */
+document.getElementById('btnAddTech').addEventListener('click', ()=>{
+  document.getElementById('addTechForm').classList.add('show');
+  document.getElementById('newTechId').focus();
+});
+document.getElementById('btnCancelNewTech').addEventListener('click', ()=>{
+  document.getElementById('addTechForm').classList.remove('show');
+  document.getElementById('newTechId').value = '';
+  document.getElementById('newTechName').value = '';
+});
+document.getElementById('btnSaveNewTech').addEventListener('click', async ()=>{
+  const id = document.getElementById('newTechId').value.trim();
+  const name = document.getElementById('newTechName').value.trim();
+  if(!id || !name){ showToast('ID dan Nama teknisi wajib diisi.'); return; }
+  if(roster.some(r => r.id.toLowerCase() === id.toLowerCase())){ showToast('ID teknisi sudah dipakai, gunakan ID lain.'); return; }
+  roster.push({ id, name });
+  await persistRoster();
+  technicians.push({ id, name, schedule: Array(DAYS_IN_MONTH).fill('X') });
+  TOTAL_TEKNISI = technicians.length;
+  await persistCurrentMonth();
+  renderAll();
+  document.getElementById('addTechForm').classList.remove('show');
+  document.getElementById('newTechId').value = '';
+  document.getElementById('newTechName').value = '';
+  showToast(`${name} ditambahkan ke roster teknisi.`);
 });
 
+/* ================= EVENT: KOSONGKAN BULAN INI ================= */
+document.getElementById('btnReset').addEventListener('click', async ()=>{
+  if(!confirm(`Kosongkan semua jadwal untuk ${BULAN[MONTH]} ${YEAR}? Bulan lain tidak akan terpengaruh.`)) return;
+  technicians.forEach(t=>{ t.schedule = Array(DAYS_IN_MONTH).fill('X'); });
+  await persistCurrentMonth();
+  renderAll();
+  showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} dikosongkan.`);
+});
+
+/* ================= EVENT: SALIN DARI BULAN LALU ================= */
+document.getElementById('btnCopyPrev').addEventListener('click', async ()=>{
+  let py = YEAR, pm = MONTH - 1;
+  if(pm < 0){ pm = 11; py -= 1; }
+  const prevData = await loadMonthSchedules(py, pm);
+  if(!prevData){ showToast(`Belum ada data tersimpan untuk ${BULAN[pm]} ${py}.`); return; }
+  if(!confirm(`Salin jadwal dari ${BULAN[pm]} ${py} sebagai titik awal ${BULAN[MONTH]} ${YEAR}? Data yang sudah diisi di bulan ini akan ditimpa.`)) return;
+  const map = {};
+  prevData.forEach(s => { map[s.id] = s.schedule; });
+  technicians.forEach(t=>{
+    const src = map[t.id];
+    if(src){
+      const base = src.slice(0, DAYS_IN_MONTH);
+      while(base.length < DAYS_IN_MONTH) base.push('X');
+      t.schedule = base;
+    }
+  });
+  await persistCurrentMonth();
+  renderAll();
+  showToast(`Jadwal disalin dari ${BULAN[pm]} ${py}.`);
+});
+
+/* ================= EVENT: EXPORT JSON ================= */
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const exportData = technicians.map(t => ({
     id: t.id,
@@ -1042,8 +1274,17 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   a.download = `jadwal_teknisi_${BULAN[MONTH]}_${YEAR}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Perubahan berhasil di-export ke file JSON.');
+  showToast('Data bulan ini berhasil di-export ke file JSON.');
 });
+
+/* ================= INIT ================= */
+async function init(){
+  roster = await ensureRoster();
+  await switchMonth(REAL_YEAR, REAL_MONTH);
+  populateMonthSelector();
+  renderHistoryRow();
+}
+init();
 </script>
 
 </body>
