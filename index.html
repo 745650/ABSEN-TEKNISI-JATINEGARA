@@ -557,6 +557,27 @@
   }
   .footnote b{color:var(--muted);}
 
+  .sektor-sub{font-size:10px;color:var(--muted-2);font-weight:500;}
+  .sektor-filter-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .sektor-filter-bar label{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .sektor-filter-bar select{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .sektor-filter-bar select:focus{outline:1px solid var(--cyan);}
+
   ::-webkit-scrollbar{height:9px;width:9px;}
   ::-webkit-scrollbar-track{background:var(--panel-2);}
   ::-webkit-scrollbar-thumb{background:#233a5c;border-radius:6px;}
@@ -570,8 +591,8 @@
       <span class="live-badge"><span class="live-dot"></span>LIVE</span>
       <span style="color:var(--muted);font-size:12px;">diperbarui otomatis</span>
     </div>
-    <h1>Dashboard Kehadiran Teknisi</h1>
-    <div class="sub">Monitoring absensi &amp; jadwal teknisi lapangan &mdash; input manual per bulan, tersimpan otomatis</div>
+    <h1>Dashboard Kehadiran Teknisi Assurance</h1>
+    <div class="sub">STO Jatinegara (JTN) &mdash; Sektor 1&ndash;4 &mdash; 33 teknisi &mdash; input manual per bulan, tersimpan otomatis</div>
   </div>
   <div class="clock-box">
     <div class="theme-switch" id="themeSwitch">
@@ -663,8 +684,9 @@
       <thead>
         <tr>
           <th style="width:50px;">No</th>
-          <th class="name-col" style="position:static;">ID Teknisi</th>
+          <th class="name-col" style="position:static;">NIK</th>
           <th class="name-col" style="position:static; text-align:left;">Nama Teknisi</th>
+          <th class="name-col" style="position:static; text-align:left;">Sektor</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -681,6 +703,10 @@
     <span class="month-tag" id="monthStatusTag">-</span>
     <span class="save-indicator" id="saveIndicator">&#9679; Tersimpan</span>
     <span style="flex:1;"></span>
+    <div class="sektor-filter-bar">
+      <label for="sektorFilter">&#127760; Sektor</label>
+      <select id="sektorFilter"><option value="ALL">Semua Sektor</option></select>
+    </div>
     <button class="btn" id="btnCopyPrev" title="Salin jadwal dari bulan sebelumnya sebagai titik awal">&#8617; Salin dari Bulan Lalu</button>
   </div>
   <div class="schedule-controls">
@@ -707,8 +733,9 @@
     </div>
   </div>
   <div class="add-tech-form" id="addTechForm">
-    <input type="text" id="newTechId" placeholder="ID Teknisi (mis. TKN026)">
+    <input type="text" id="newTechId" placeholder="NIK Teknisi">
     <input type="text" id="newTechName" placeholder="Nama Teknisi">
+    <input type="text" id="newTechSektor" placeholder="Sektor (mis. SEKTOR JATINEGARA 1)">
     <button class="btn primary" id="btnSaveNewTech">Simpan</button>
     <button class="btn" id="btnCancelNewTech">Batal</button>
   </div>
@@ -719,7 +746,7 @@
     </table>
   </div>
   <div class="footnote">
-    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus.
+    <b>Cara pakai:</b> pilih <b>Bulan Aktif</b> di atas, lalu klik tiap sel status untuk mengisi jadwal teknisi bulan itu (siklus: Belum Diisi &rarr; Masuk &rarr; Libur &rarr; Sakit &rarr; Cuti &rarr; Izin &rarr; Piket Malam). Setiap perubahan <b>otomatis tersimpan</b> dan langsung memperbarui KPI, gauge, tren, serta rekap bulanan. Data tersimpan per bulan sehingga riwayat bulan-bulan sebelumnya tetap bisa dibuka kembali lewat selector bulan atau daftar Riwayat Bulan di bawah. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Daftar teknisi bersifat tetap (satu roster) &mdash; gunakan tombol <b>Tambah Teknisi</b> untuk menambah personel baru, dan ikon &times; di samping nama untuk menghapus. Jadwal Juli 2026 sudah terisi otomatis dari file jadwal yang diunggah.
   </div>
   <div class="history-row" id="historyRow"></div>
 </div>
@@ -738,8 +765,9 @@
       <thead>
         <tr>
           <th style="width:44px;">No</th>
-          <th style="text-align:left; padding-left:14px;">ID</th>
+          <th style="text-align:left; padding-left:14px;">NIK</th>
           <th style="text-align:left; padding-left:14px;">Nama Teknisi</th>
+          <th style="text-align:left; padding-left:14px;">Sektor</th>
           <th>Masuk</th>
           <th>Libur</th>
           <th>Sakit</th>
@@ -773,14 +801,11 @@ document.querySelectorAll('.theme-opt').forEach(btn=>{
   });
 });
 
-/* ================= ROSTER TEKNISI (default awal, hanya dipakai sekali saat pertama kali dibuka) ================= */
-const NAMES = [
-  "Ahmad Fauzi","Bayu Saputra","Chandra Wijaya","Dedi Kurniawan","Eko Prasetyo",
-  "Fajar Nugroho","Gilang Ramadhan","Hendra Setiawan","Irfan Maulana","Joko Susilo",
-  "Kevin Pratama","Lukman Hakim","Muhammad Rizki","Nanda Firmansyah","Oki Santoso",
-  "Putra Wibowo","Rian Hidayat","Sandi Kusuma","Taufik Hermawan","Umar Syahrul",
-  "Vino Alamsyah","Wahyu Ramadhan","Yoga Pratama","Zaki Ramadhani","Agus Salim"
-];
+/* ================= ROSTER TEKNISI ASLI (dari file jadwal_kerja_teknisi_assurance_juli_2026.xlsx) ================= */
+const REAL_ROSTER = [{"id": "25780014", "name": "MARYONO", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81293138373"}, {"id": "25860037", "name": "FEBRI BAND SAKTI SIREGAR", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85100569217"}, {"id": "25730013", "name": "ARIS SUYANTO", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81285959774"}, {"id": "25820030", "name": "DIDIK WAHYUDI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81280336411"}, {"id": "25740008", "name": "DEDI MULYADI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85101559954"}, {"id": "25990200", "name": "SEPTIANA DWI PRATAMA", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "82112522676"}, {"id": "25940125", "name": "MUHAMAD JAJAT SUDRAJAT", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81398027638"}, {"id": "26030026", "name": "IBNU ADDAM MUSTAFA", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "81337692421"}, {"id": "26020037", "name": "MUHAMMAD SAYYIDI", "sektor": "SEKTOR JATINEGARA 1", "unit": "ASSR", "nohp": "85285537523"}, {"id": "25850032", "name": "HARYADI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81281478585"}, {"id": "25920095", "name": "DEDE SUPIANDI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81315730907"}, {"id": "25900109", "name": "CANDRA SEPTIANA", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81318078445"}, {"id": "25890062", "name": "AGUS PURWANTO", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81285975967"}, {"id": "25020217", "name": "MUHAMMAD RIZKY", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "82379570038"}, {"id": "25750018", "name": "ISWAN GANI", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "81285959868"}, {"id": "25740009", "name": "AGUS PRIATNA", "sektor": "SEKTOR JATINEGARA 2", "unit": "ASSR", "nohp": "85100646869"}, {"id": "25900080", "name": "PAHRU ROHMAT", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81284212453"}, {"id": "25980191", "name": "IKHSAN WIBISANA", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81283922127"}, {"id": "25750019", "name": "NURACHMAT", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81282387548"}, {"id": "25760016", "name": "UMAR SAID", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "85100434589"}, {"id": "25810022", "name": "ABUCHOIR MUSLIM", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81219716610"}, {"id": "26060019", "name": "MUHAMMAD BARLY ALFANDI", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "8232066695"}, {"id": "25850033", "name": "REZA SATRIA PERDANA", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "85100465959"}, {"id": "26980024", "name": "TRI AJI SULISTIYONO", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "81288844762"}, {"id": "26950014", "name": "AHMAD MUHTI", "sektor": "SEKTOR JATINEGARA 3", "unit": "ASSR", "nohp": "82124202343"}, {"id": "25870041", "name": "SUDARYANTO", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81280716025"}, {"id": "25760017", "name": "SUWADI", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85100276661"}, {"id": "25000203", "name": "ILMAN MAULANA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81311771357"}, {"id": "25730025", "name": "HENDRA HIDAYAT", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85100722877"}, {"id": "25760018", "name": "BUDI SOMANTRI", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81213591554"}, {"id": "25950146", "name": "SEPTIANA MAULANA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "85101000240"}, {"id": "25970169", "name": "SADING", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "82190150860"}, {"id": "26950043", "name": "AGUNG NUGRAHA", "sektor": "SEKTOR JATINEGARA 4", "unit": "ASSR", "nohp": "81293082145"}];
+
+/* ================= JADWAL JULI 2026 ASLI (dari file yang sama) ================= */
+const REAL_SCHEDULE_JULI2026 = {"25780014": ["L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "L", "M", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "PM", "L", "M", "M", "M"], "25860037": ["M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "M", "L", "PM", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M"], "25730013": ["PM", "L", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "PM", "L", "M"], "25820030": ["M", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "M", "M", "PM", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "PM", "L"], "25740008": ["M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "PM", "L", "L", "M", "M", "M", "L", "M", "M", "M"], "25990200": ["M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "M", "M", "M", "L", "PM"], "25940125": ["M", "M", "M", "L", "PM", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "M", "L", "L", "M", "M", "M", "M", "M"], "26030026": ["M", "M", "L", "M", "L", "PM", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "M", "L"], "26020037": ["M", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "L", "M", "M"], "25850032": ["M", "PM", "L", "M", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "M", "L", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L"], "25920095": ["PM", "L", "L", "M", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "I", "L", "PM", "L", "M", "M", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M"], "25900109": ["M", "M", "PM", "L", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M"], "25890062": ["M", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M"], "25020217": ["L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "PM", "M", "M", "M", "M", "L", "M", "M", "M", "L", "M", "L", "M", "M", "L", "M", "M", "PM"], "25750018": ["M", "M", "M", "L", "PM", "M", "M", "L", "M", "M", "L", "M", "S", "M", "PM", "L", "M", "L", "PM", "M", "M", "M", "PM", "L", "M", "L", "M", "PM", "L", "M", "M"], "25740009": ["M", "M", "M", "M", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "PM", "L", "M", "M", "L", "PM", "M", "M", "M", "L", "M"], "25900080": ["M", "M", "L", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "M", "L", "M", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M"], "25980191": ["M", "L", "M", "M", "L", "M", "M", "L", "L", "L", "M", "PM", "M", "M", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "PM", "M", "M", "M", "L", "M"], "25750019": ["M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "L", "M", "M", "PM"], "25760016": ["L", "M", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "L", "PM", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "M"], "25810022": ["L", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M"], "26060019": ["M", "L", "M", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "M", "PM", "L", "M"], "25850033": ["M", "PM", "L", "L", "M", "M", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "M", "M", "L"], "26980024": ["PM", "L", "M", "M", "L", "M", "M", "L", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M"], "26950014": ["M", "M", "M", "L", "PM", "M", "M", "M", "L", "M", "L", "M", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "PM", "L"], "25870041": ["M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M", "PM", "L", "M", "M", "M", "L", "M", "M", "M", "M", "M", "L", "PM", "L", "M", "L", "M", "M", "M"], "25760017": ["PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "L", "M", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "PM", "L", "L", "M", "M", "M", "L", "M", "PM"], "25000203": ["L", "M", "M", "L", "PM", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "PM", "L", "M"], "25730025": ["M", "L", "M", "PM", "M", "M", "M", "M", "L", "M", "PM", "L", "M", "M", "M", "PM", "L", "M", "L", "M", "M", "M", "L", "PM", "L", "M", "M", "M", "M", "PM", "L"], "25760018": ["M", "M", "M", "L", "M", "M", "M", "M", "PM", "L", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "PM", "L", "M", "M", "M", "L", "M", "PM", "L", "M", "M"], "25950146": ["M", "M", "L", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "M", "M", "L", "M", "M", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M"], "25970169": ["L", "M", "M", "L", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "L", "M", "M", "M", "L", "PM", "M", "L", "M", "M", "M", "M", "L", "PM", "L", "M", "M", "M"], "26950043": ["M", "PM", "L", "M", "L", "M", "M", "PM", "L", "M", "M", "L", "M", "M", "M", "M", "L", "M", "L", "PM", "L", "M", "M", "M", "L", "PM", "M", "M", "M", "M", "L"]};
 
 const STATUS = {
   X:{key:'X', label:'Belum Diisi', color:'#3a3f4a'},
@@ -828,7 +853,7 @@ async function ensureRoster(){
     try{ const parsed = JSON.parse(stored); if(Array.isArray(parsed) && parsed.length) return parsed; }
     catch(e){ /* fallthrough to seed */ }
   }
-  const seed = NAMES.map((name, idx) => ({ id: 'TKN' + String(idx+1).padStart(3,'0'), name }));
+  const seed = REAL_ROSTER.map(r => ({ id:r.id, name:r.name, sektor:r.sektor, unit:r.unit, nohp:r.nohp }));
   await storageSet('roster:teknisi', JSON.stringify(seed), true);
   return seed;
 }
@@ -847,17 +872,23 @@ async function saveMonthSchedules(y,m, techs){
   const data = techs.map(t => ({ id:t.id, schedule:t.schedule }));
   await storageSet('jadwal:'+monthKey(y,m), JSON.stringify(data), true);
 }
-function buildTechnicians(scheduleData, daysInMonth){
+function buildTechnicians(scheduleData, daysInMonth, y, m){
   const map = {};
   (scheduleData || []).forEach(s => { map[s.id] = s.schedule; });
+  const isJuli2026 = (y === 2026 && m === 6);
   return roster.map(r => {
     let sched = map[r.id];
     if(!sched || sched.length !== daysInMonth){
-      const base = (sched || []).slice(0, daysInMonth);
+      let base;
+      if(!sched && isJuli2026 && REAL_SCHEDULE_JULI2026[r.id]){
+        base = REAL_SCHEDULE_JULI2026[r.id].slice(0, daysInMonth);
+      } else {
+        base = (sched || []).slice(0, daysInMonth);
+      }
       while(base.length < daysInMonth) base.push('X');
       sched = base;
     }
-    return { id: r.id, name: r.name, schedule: sched };
+    return { id: r.id, name: r.name, sektor: r.sektor || '', unit: r.unit || '', nohp: r.nohp || '', schedule: sched };
   });
 }
 
@@ -865,8 +896,10 @@ function buildTechnicians(scheduleData, daysInMonth){
 let YEAR, MONTH, DAYS_IN_MONTH, TODAY_DATE, IS_CURRENT_MONTH;
 let technicians = [];
 let TOTAL_TEKNISI = 0;
+let activeSektor = 'ALL';
 
 function pct(n){ return TOTAL_TEKNISI ? Math.round((n/TOTAL_TEKNISI)*1000)/10 : 0; }
+function getFiltered(){ return activeSektor === 'ALL' ? technicians : technicians.filter(t => t.sektor === activeSektor); }
 
 /* ================= CLOCK ================= */
 function updateClock(){
@@ -977,7 +1010,7 @@ function renderTrend(){
 /* ================= RENDER: TABEL JADWAL ================= */
 function renderScheduleHead(){
   document.getElementById('scheduleMonthLabel').textContent =
-    `${BULAN[MONTH]} ${YEAR} — ${DAYS_IN_MONTH} hari${IS_CURRENT_MONTH ? ' (bulan berjalan)' : ''}`;
+    `${BULAN[MONTH]} ${YEAR} — ${DAYS_IN_MONTH} hari${IS_CURRENT_MONTH ? ' (bulan berjalan)' : ''}${activeSektor!=='ALL' ? ' — filter: '+activeSektor : ''}`;
   const headRow = document.getElementById('scheduleHeadRow');
   let headHtml = `<th class="name-col">TEKNISI</th>`;
   for(let d=1; d<=DAYS_IN_MONTH; d++){
@@ -989,32 +1022,33 @@ function renderScheduleHead(){
 }
 function renderScheduleBody(){
   const bodyEl = document.getElementById('scheduleBody');
+  const list = getFiltered();
   let bodyHtml = '';
-  technicians.forEach((t, tIdx)=>{
-    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<button class="del-tech-btn" data-delidx="${tIdx}" title="Hapus teknisi dari roster">&times;</button><br><span style="font-size:10px;color:var(--muted-2);">${t.id}</span></td>`;
+  list.forEach((t, tIdx)=>{
+    bodyHtml += `<tr><td class="name-col"><span style="color:var(--muted-2); font-weight:600; margin-right:4px;">${tIdx+1}.</span>${t.name}<button class="del-tech-btn" data-delid="${t.id}" title="Hapus teknisi dari roster">&times;</button><br><span class="sektor-sub">${t.sektor || ''}</span></td>`;
     t.schedule.forEach((st, i)=>{
       const d = i+1;
       const isToday = IS_CURRENT_MONTH && d === TODAY_DATE;
       const label = st === 'X' ? '&ndash;' : st;
-      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-tech="${tIdx}" data-day="${i}"><span class="status-pill st-${st}">${label}</span></td>`;
+      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-techid="${t.id}" data-day="${i}"><span class="status-pill st-${st}">${label}</span></td>`;
     });
     bodyHtml += `</tr>`;
   });
-  bodyEl.innerHTML = bodyHtml;
+  bodyEl.innerHTML = bodyHtml || '<tr><td style="padding:16px;color:var(--muted-2);">Tidak ada teknisi pada sektor ini.</td></tr>';
 }
 
 /* ================= RENDER: TEKNISI MASUK HARI/TANGGAL AKTIF ================= */
 function renderMasukTodayTable(){
-  const masukList = technicians
+  const masukList = getFiltered()
     .filter(t => t.schedule[TODAY_DATE-1] === 'M' || t.schedule[TODAY_DATE-1] === 'PM')
     .sort((a,b) => a.name.localeCompare(b.name));
 
   document.getElementById('masukTodaySub').textContent =
-    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}${IS_CURRENT_MONTH ? ' (hari ini)' : ''}`;
+    `${masukList.length} dari ${getFiltered().length} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}${IS_CURRENT_MONTH ? ' (hari ini)' : ''}${activeSektor!=='ALL' ? ' — '+activeSektor : ''}`;
 
   const tbody = document.getElementById('masukTodayBody');
   if(masukList.length === 0){
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted-2); padding:16px;">Tidak ada teknisi yang masuk pada tanggal ini.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted-2); padding:16px;">Tidak ada teknisi yang masuk pada tanggal ini.</td></tr>`;
     return;
   }
   let html = '';
@@ -1024,6 +1058,7 @@ function renderMasukTodayTable(){
       <td>${idx+1}</td>
       <td style="text-align:left; font-weight:600; color:var(--muted);">${t.id}</td>
       <td style="text-align:left; font-weight:600;">${t.name}</td>
+      <td style="text-align:left; color:var(--muted);">${t.sektor}</td>
       <td><span class="status-pill st-${st}" style="cursor:default;">${st}</span></td>
     </tr>`;
   });
@@ -1032,11 +1067,12 @@ function renderMasukTodayTable(){
 
 /* ================= RENDER: REKAP KEHADIRAN 1 BULAN ================= */
 function renderRekapTable(){
+  const list = getFiltered();
   document.getElementById('rekapSub').textContent =
-    `Total ${DAYS_IN_MONTH} hari pada ${BULAN[MONTH]} ${YEAR} — ${TOTAL_TEKNISI} teknisi — target minimal ${MIN_HARI_KERJA} hari kerja/bulan`;
+    `Total ${DAYS_IN_MONTH} hari pada ${BULAN[MONTH]} ${YEAR} — ${list.length} teknisi${activeSektor!=='ALL' ? ' ('+activeSektor+')' : ''} — target minimal ${MIN_HARI_KERJA} hari kerja/bulan`;
 
   let html = '';
-  technicians.forEach((t, idx) => {
+  list.forEach((t, idx) => {
     const c = {X:0,M:0,L:0,S:0,C:0,I:0,PM:0};
     t.schedule.forEach(st => c[st]++);
     const hariKerja = DAYS_IN_MONTH - c.L; // hari kerja efektif (di luar libur terjadwal)
@@ -1048,6 +1084,7 @@ function renderRekapTable(){
       <td>${idx+1}</td>
       <td style="text-align:left; padding-left:14px; color:var(--muted); font-weight:600;">${t.id}</td>
       <td style="text-align:left; padding-left:14px; font-weight:600;">${t.name}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${t.sektor}</td>
       <td style="color:var(--green); font-weight:700;">${c.M}</td>
       <td style="color:var(--slate); font-weight:700;">${c.L}</td>
       <td style="color:var(--red); font-weight:700;">${c.S}</td>
@@ -1059,7 +1096,17 @@ function renderRekapTable(){
       <td style="font-weight:700; color:${memenuhiTarget?'var(--green)':'var(--red)'};">${kehadiranPct}%</td>
     </tr>`;
   });
-  document.getElementById('rekapBody').innerHTML = html;
+  document.getElementById('rekapBody').innerHTML = html || '<tr><td colspan="12" style="padding:16px;color:var(--muted-2);">Tidak ada teknisi pada sektor ini.</td></tr>';
+}
+
+/* ================= FILTER SEKTOR ================= */
+function populateSektorFilter(){
+  const sel = document.getElementById('sektorFilter');
+  const sektorSet = Array.from(new Set(roster.map(r => r.sektor).filter(Boolean))).sort();
+  let html = '<option value="ALL">Semua Sektor</option>';
+  sektorSet.forEach(s => { html += `<option value="${s}">${s}</option>`; });
+  sel.innerHTML = html;
+  sel.value = activeSektor;
 }
 
 /* ================= RENDER GABUNGAN ================= */
@@ -1101,9 +1148,16 @@ async function switchMonth(y, m){
   IS_CURRENT_MONTH = (YEAR === REAL_YEAR && MONTH === REAL_MONTH);
   TODAY_DATE = IS_CURRENT_MONTH ? REAL_DATE : DAYS_IN_MONTH;
 
-  const scheduleData = await loadMonthSchedules(YEAR, MONTH);
-  technicians = buildTechnicians(scheduleData, DAYS_IN_MONTH);
+  let scheduleData = await loadMonthSchedules(YEAR, MONTH);
+  const wasEmpty = !scheduleData;
+  technicians = buildTechnicians(scheduleData, DAYS_IN_MONTH, YEAR, MONTH);
   TOTAL_TEKNISI = technicians.length;
+
+  // Jika Juli 2026 belum pernah disimpan, simpan langsung hasil seed dari file asli
+  if(wasEmpty && YEAR === 2026 && MONTH === 6){
+    await saveMonthSchedules(YEAR, MONTH, technicians);
+    scheduleData = true;
+  }
 
   const tag = document.getElementById('monthStatusTag');
   if(scheduleData){ tag.textContent = 'Ada data tersimpan'; tag.className = 'month-tag filled'; }
@@ -1167,27 +1221,39 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>t.classList.remove('show'), 1800);
 }
 
+/* ================= EVENT: FILTER SEKTOR ================= */
+document.getElementById('sektorFilter').addEventListener('change', (e)=>{
+  activeSektor = e.target.value;
+  renderScheduleHead();
+  renderScheduleBody();
+  renderMasukTodayTable();
+  renderRekapTable();
+});
+
 /* ================= EVENT: EDIT SEL / HAPUS TEKNISI ================= */
 document.getElementById('scheduleBody').addEventListener('click', async (e)=>{
   const delBtn = e.target.closest('.del-tech-btn');
   if(delBtn){
-    const idx = parseInt(delBtn.dataset.delidx, 10);
-    const t = technicians[idx];
+    const delId = delBtn.dataset.delid;
+    const t = technicians.find(x => x.id === delId);
+    if(!t) return;
     if(!confirm(`Hapus ${t.name} (${t.id}) dari roster teknisi? Teknisi ini tidak akan tampil lagi di semua bulan.`)) return;
-    roster = roster.filter(r => r.id !== t.id);
+    roster = roster.filter(r => r.id !== delId);
     await persistRoster();
-    technicians.splice(idx,1);
+    technicians = technicians.filter(x => x.id !== delId);
     TOTAL_TEKNISI = technicians.length;
     await persistCurrentMonth();
+    populateSektorFilter();
     renderAll();
     showToast(`${t.name} dihapus dari roster.`);
     return;
   }
   const cell = e.target.closest('.editable-cell');
   if(!cell) return;
-  const tIdx = parseInt(cell.dataset.tech, 10);
+  const techId = cell.dataset.techid;
   const dIdx = parseInt(cell.dataset.day, 10);
-  const t = technicians[tIdx];
+  const t = technicians.find(x => x.id === techId);
+  if(!t) return;
   const current = t.schedule[dIdx];
   const nextIdx = (STATUS_ORDER.indexOf(current) + 1) % STATUS_ORDER.length;
   const next = STATUS_ORDER[nextIdx];
@@ -1211,21 +1277,25 @@ document.getElementById('btnCancelNewTech').addEventListener('click', ()=>{
   document.getElementById('addTechForm').classList.remove('show');
   document.getElementById('newTechId').value = '';
   document.getElementById('newTechName').value = '';
+  document.getElementById('newTechSektor').value = '';
 });
 document.getElementById('btnSaveNewTech').addEventListener('click', async ()=>{
   const id = document.getElementById('newTechId').value.trim();
   const name = document.getElementById('newTechName').value.trim();
-  if(!id || !name){ showToast('ID dan Nama teknisi wajib diisi.'); return; }
-  if(roster.some(r => r.id.toLowerCase() === id.toLowerCase())){ showToast('ID teknisi sudah dipakai, gunakan ID lain.'); return; }
-  roster.push({ id, name });
+  const sektor = document.getElementById('newTechSektor').value.trim();
+  if(!id || !name){ showToast('NIK dan Nama teknisi wajib diisi.'); return; }
+  if(roster.some(r => r.id.toLowerCase() === id.toLowerCase())){ showToast('NIK teknisi sudah dipakai, gunakan NIK lain.'); return; }
+  roster.push({ id, name, sektor, unit:'ASSR', nohp:'' });
   await persistRoster();
-  technicians.push({ id, name, schedule: Array(DAYS_IN_MONTH).fill('X') });
+  technicians.push({ id, name, sektor, unit:'ASSR', nohp:'', schedule: Array(DAYS_IN_MONTH).fill('X') });
   TOTAL_TEKNISI = technicians.length;
   await persistCurrentMonth();
+  populateSektorFilter();
   renderAll();
   document.getElementById('addTechForm').classList.remove('show');
   document.getElementById('newTechId').value = '';
   document.getElementById('newTechName').value = '';
+  document.getElementById('newTechSektor').value = '';
   showToast(`${name} ditambahkan ke roster teknisi.`);
 });
 
@@ -1265,6 +1335,7 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   const exportData = technicians.map(t => ({
     id: t.id,
     name: t.name,
+    sektor: t.sektor,
     schedule: t.schedule.map((st, i) => ({ tanggal: i+1, status: st, keterangan: STATUS[st].label }))
   }));
   const blob = new Blob([JSON.stringify({ bulan: `${BULAN[MONTH]} ${YEAR}`, data: exportData }, null, 2)], { type:'application/json' });
@@ -1280,7 +1351,8 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 /* ================= INIT ================= */
 async function init(){
   roster = await ensureRoster();
-  await switchMonth(REAL_YEAR, REAL_MONTH);
+  populateSektorFilter();
+  await switchMonth(2026, 6); // buka langsung ke Juli 2026 (bulan sumber data)
   populateMonthSelector();
   renderHistoryRow();
 }
