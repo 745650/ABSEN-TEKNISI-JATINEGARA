@@ -579,12 +579,162 @@
   }
   .sektor-filter-bar select:focus{outline:1px solid var(--cyan);}
 
+  /* SIDEBAR LAYOUT */
+  html, body{margin:0;padding:0;}
+  .app-layout{
+    display:flex;
+    min-height:100vh;
+  }
+  .sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:var(--bg-alt);
+    border-right:1px solid var(--border);
+    padding:22px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .sidebar-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 4px;
+  }
+  .sidebar-brand .brand-mark{
+    width:34px;height:34px;
+    border-radius:9px;
+    background:linear-gradient(135deg, var(--cyan), var(--violet));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    color:#0c1626;
+    flex-shrink:0;
+  }
+  .sidebar-brand .brand-text{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1.25;
+  }
+  .sidebar-brand .brand-text span{
+    display:block;
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    color:var(--muted-2);
+    letter-spacing:0.4px;
+    margin-top:2px;
+  }
+  .sidebar-section-label{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--muted-2);
+    letter-spacing:0.8px;
+    padding:0 8px;
+    margin-bottom:2px;
+  }
+  .sidebar-nav{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .sidebar-nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:9px;
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:background 0.15s ease, color 0.15s ease;
+    user-select:none;
+  }
+  .sidebar-nav-item .nav-icon{
+    width:18px;
+    text-align:center;
+    font-size:14px;
+    opacity:0.85;
+  }
+  .sidebar-nav-item .nav-badge{
+    margin-left:auto;
+    font-size:9.5px;
+    font-weight:700;
+    color:var(--muted-2);
+    background:var(--panel);
+    border:1px solid var(--border);
+    padding:1px 6px;
+    border-radius:20px;
+  }
+  .sidebar-nav-item:hover{background:var(--panel);color:var(--text);}
+  .sidebar-nav-item.active{
+    background:var(--cyan-dim);
+    border-color:rgba(76,158,255,0.35);
+    color:var(--cyan);
+  }
+  .sidebar-nav-item.active .nav-badge{color:var(--cyan);border-color:rgba(76,158,255,0.35);}
+  .sidebar-foot{
+    margin-top:auto;
+    font-size:10.5px;
+    color:var(--muted-2);
+    padding:0 8px;
+    line-height:1.6;
+    border-top:1px solid var(--border);
+    padding-top:14px;
+  }
+  .main-content{
+    flex:1;
+    min-width:0;
+    padding:28px 32px 60px;
+  }
+  @media(max-width:900px){
+    .app-layout{flex-direction:column;}
+    .sidebar{
+      width:100%;
+      height:auto;
+      position:relative;
+      flex-direction:row;
+      align-items:center;
+      overflow-x:auto;
+    }
+    .sidebar-nav{flex-direction:row;}
+    .sidebar-foot{display:none;}
+    .sidebar-section-label{display:none;}
+  }
+
   ::-webkit-scrollbar{height:9px;width:9px;}
   ::-webkit-scrollbar-track{background:var(--panel-2);}
   ::-webkit-scrollbar-thumb{background:#233a5c;border-radius:6px;}
 </style>
 </head>
 <body data-theme="graphite">
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">JTN</div>
+      <div class="brand-text">Absen Teknisi<span>TelkomAkses &middot; STO Jatinegara</span></div>
+    </div>
+    <div>
+      <div class="sidebar-section-label">KATEGORI</div>
+      <div class="sidebar-nav" id="categoryNav">
+        <div class="sidebar-nav-item active" data-category="ASSURANCE"><span class="nav-icon">&#128295;</span><span>Assurance</span><span class="nav-badge" id="navBadgeASSURANCE">0</span></div>
+        <div class="sidebar-nav-item" data-category="PROVISIONING"><span class="nav-icon">&#128268;</span><span>Provisioning</span><span class="nav-badge" id="navBadgePROVISIONING">0</span></div>
+        <div class="sidebar-nav-item" data-category="B2B"><span class="nav-icon">&#127970;</span><span>B2B</span><span class="nav-badge" id="navBadgeB2B">0</span></div>
+      </div>
+    </div>
+    <div class="sidebar-foot">Setiap kategori punya roster &amp; jadwal terpisah. Upload atau tambah teknisi sesuai kategori yang sedang aktif.</div>
+  </aside>
+
+  <div class="main-content">
 
 <header>
   <div class="title-block">
@@ -592,8 +742,8 @@
       <span class="live-badge"><span class="live-dot"></span>LIVE</span>
       <span style="color:var(--muted);font-size:12px;">diperbarui otomatis</span>
     </div>
-    <h1>Dashboard Kehadiran Teknisi Assurance</h1>
-    <div class="sub">STO Jatinegara (JTN) &mdash; Sektor 1&ndash;4 &mdash; 33 teknisi &mdash; input manual per bulan, tersimpan otomatis</div>
+    <h1>DASBOARD ABSEN TEKNISI - JATINEGARA</h1>
+    <div class="sub" id="headerSub">STO Jatinegara (JTN) &mdash; Kategori: Assurance &mdash; input manual per bulan, tersimpan otomatis</div>
   </div>
   <div class="clock-box">
     <div class="theme-switch" id="themeSwitch">
@@ -794,6 +944,9 @@
 
 <div class="toast" id="toast"></div>
 
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
 <script>
 /* ================= THEME SWITCH ================= */
 document.querySelectorAll('.theme-opt').forEach(btn=>{
@@ -848,42 +1001,51 @@ async function storageListKeys(prefix, shared){
   }catch(e){ return []; }
 }
 
-/* ================= ROSTER (daftar teknisi tetap, dipakai di semua bulan) ================= */
+/* ================= KATEGORI (ASSURANCE / PROVISIONING / B2B) ================= */
+const CATEGORIES = ['ASSURANCE','PROVISIONING','B2B'];
+let activeCategory = 'ASSURANCE';
+function rosterStorageKey(cat){ return 'roster:teknisi:'+cat; }
+
+/* ================= ROSTER (daftar teknisi tetap per kategori, dipakai di semua bulan) ================= */
 let roster = [];
-async function ensureRoster(){
-  const stored = await storageGet('roster:teknisi', true);
+async function ensureRoster(cat){
+  const stored = await storageGet(rosterStorageKey(cat), true);
   if(stored){
-    try{ const parsed = JSON.parse(stored); if(Array.isArray(parsed) && parsed.length) return parsed; }
+    try{ const parsed = JSON.parse(stored); if(Array.isArray(parsed)) return parsed; }
     catch(e){ /* fallthrough to seed */ }
   }
-  const seed = REAL_ROSTER.map(r => ({ id:r.id, name:r.name, sektor:r.sektor, unit:r.unit, nohp:r.nohp }));
-  await storageSet('roster:teknisi', JSON.stringify(seed), true);
+  // Hanya kategori ASSURANCE yang sudah punya data awal (dari file upload pertama)
+  const seed = cat === 'ASSURANCE'
+    ? REAL_ROSTER.map(r => ({ id:r.id, name:r.name, sektor:r.sektor, unit:r.unit, nohp:r.nohp }))
+    : [];
+  await storageSet(rosterStorageKey(cat), JSON.stringify(seed), true);
   return seed;
 }
-async function persistRoster(){ await storageSet('roster:teknisi', JSON.stringify(roster), true); }
+async function persistRoster(){ await storageSet(rosterStorageKey(activeCategory), JSON.stringify(roster), true); }
 
-/* ================= DATA JADWAL PER BULAN ================= */
+/* ================= DATA JADWAL PER BULAN (per kategori) ================= */
 function pad2(n){ return String(n).padStart(2,'0'); }
 function monthKey(y,m){ return `${y}-${pad2(m+1)}`; }
+function jadwalPrefix(cat){ return 'jadwal:'+cat+':'; }
 
 async function loadMonthSchedules(y,m){
-  const raw = await storageGet('jadwal:'+monthKey(y,m), true);
+  const raw = await storageGet(jadwalPrefix(activeCategory)+monthKey(y,m), true);
   if(!raw) return null;
   try{ return JSON.parse(raw); }catch(e){ return null; }
 }
 async function saveMonthSchedules(y,m, techs){
   const data = techs.map(t => ({ id:t.id, schedule:t.schedule }));
-  await storageSet('jadwal:'+monthKey(y,m), JSON.stringify(data), true);
+  await storageSet(jadwalPrefix(activeCategory)+monthKey(y,m), JSON.stringify(data), true);
 }
 function buildTechnicians(scheduleData, daysInMonth, y, m){
   const map = {};
   (scheduleData || []).forEach(s => { map[s.id] = s.schedule; });
-  const isJuli2026 = (y === 2026 && m === 6);
+  const isJuli2026Assurance = (activeCategory === 'ASSURANCE' && y === 2026 && m === 6);
   return roster.map(r => {
     let sched = map[r.id];
     if(!sched || sched.length !== daysInMonth){
       let base;
-      if(!sched && isJuli2026 && REAL_SCHEDULE_JULI2026[r.id]){
+      if(!sched && isJuli2026Assurance && REAL_SCHEDULE_JULI2026[r.id]){
         base = REAL_SCHEDULE_JULI2026[r.id].slice(0, daysInMonth);
       } else {
         base = (sched || []).slice(0, daysInMonth);
@@ -1156,8 +1318,8 @@ async function switchMonth(y, m){
   technicians = buildTechnicians(scheduleData, DAYS_IN_MONTH, YEAR, MONTH);
   TOTAL_TEKNISI = technicians.length;
 
-  // Jika Juli 2026 belum pernah disimpan, simpan langsung hasil seed dari file asli
-  if(wasEmpty && YEAR === 2026 && MONTH === 6){
+  // Jika Juli 2026 kategori ASSURANCE belum pernah disimpan, simpan langsung hasil seed dari file asli
+  if(wasEmpty && activeCategory === 'ASSURANCE' && YEAR === 2026 && MONTH === 6){
     await saveMonthSchedules(YEAR, MONTH, technicians);
     scheduleData = true;
   }
@@ -1167,9 +1329,44 @@ async function switchMonth(y, m){
   else if(IS_CURRENT_MONTH){ tag.textContent = 'Bulan berjalan — belum diisi'; tag.className = 'month-tag current'; }
   else { tag.textContent = 'Belum ada data'; tag.className = 'month-tag empty'; }
 
+  updateHeaderSub();
   renderAll();
   renderHistoryRow();
 }
+
+/* ================= NAVIGASI KATEGORI ================= */
+function updateHeaderSub(){
+  const catLabel = activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase();
+  document.getElementById('headerSub').textContent =
+    `STO Jatinegara (JTN) — Kategori: ${catLabel} — ${TOTAL_TEKNISI} teknisi — input manual per bulan, tersimpan otomatis`;
+}
+async function refreshNavBadges(){
+  for(const cat of CATEGORIES){
+    const stored = await storageGet(rosterStorageKey(cat), true);
+    let count = 0;
+    if(stored){ try{ const parsed = JSON.parse(stored); count = Array.isArray(parsed) ? parsed.length : 0; }catch(e){} }
+    else if(cat === 'ASSURANCE'){ count = REAL_ROSTER.length; }
+    const badge = document.getElementById('navBadge'+cat);
+    if(badge) badge.textContent = count;
+  }
+}
+async function switchCategory(cat){
+  if(cat === activeCategory) return;
+  activeCategory = cat;
+  document.querySelectorAll('.sidebar-nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.category === cat);
+  });
+  activeSektor = 'ALL';
+  roster = await ensureRoster(activeCategory);
+  populateSektorFilter();
+  await switchMonth(YEAR, MONTH);
+  await refreshNavBadges();
+}
+document.getElementById('categoryNav').addEventListener('click', (e)=>{
+  const item = e.target.closest('.sidebar-nav-item');
+  if(!item) return;
+  switchCategory(item.dataset.category);
+});
 
 /* ================= SELECTOR BULAN ================= */
 function populateMonthSelector(){
@@ -1190,13 +1387,14 @@ function populateMonthSelector(){
 
 /* ================= RIWAYAT BULAN ================= */
 async function renderHistoryRow(){
-  const rawKeys = await storageListKeys('jadwal:', true);
+  const prefix = jadwalPrefix(activeCategory);
+  const rawKeys = await storageListKeys(prefix, true);
   const container = document.getElementById('historyRow');
   if(!rawKeys || rawKeys.length === 0){
     container.innerHTML = '<span style="font-size:11px;color:var(--muted-2);">Riwayat bulan akan muncul di sini setelah kamu mulai mengisi jadwal.</span>';
     return;
   }
-  const monthKeys = rawKeys.map(k => k.startsWith('jadwal:') ? k.slice(7) : k).filter(k => /^\d{4}-\d{2}$/.test(k));
+  const monthKeys = rawKeys.map(k => k.startsWith(prefix) ? k.slice(prefix.length) : k).filter(k => /^\d{4}-\d{2}$/.test(k));
   const sorted = Array.from(new Set(monthKeys)).sort().reverse();
   let html = '<div style="width:100%;font-size:11px;color:var(--muted-2);margin-bottom:2px;">Riwayat Bulan Tersimpan:</div>';
   sorted.forEach(mk=>{
@@ -1247,7 +1445,9 @@ document.getElementById('scheduleBody').addEventListener('click', async (e)=>{
     TOTAL_TEKNISI = technicians.length;
     await persistCurrentMonth();
     populateSektorFilter();
+    updateHeaderSub();
     renderAll();
+    await refreshNavBadges();
     showToast(`${t.name} dihapus dari roster.`);
     return;
   }
@@ -1294,7 +1494,9 @@ document.getElementById('btnSaveNewTech').addEventListener('click', async ()=>{
   TOTAL_TEKNISI = technicians.length;
   await persistCurrentMonth();
   populateSektorFilter();
+  updateHeaderSub();
   renderAll();
+  await refreshNavBadges();
   document.getElementById('addTechForm').classList.remove('show');
   document.getElementById('newTechId').value = '';
   document.getElementById('newTechName').value = '';
@@ -1423,7 +1625,7 @@ document.getElementById('uploadJadwalInput').addEventListener('change', async (e
     const daysDetected = parsed[0].schedule.length;
     const ok = confirm(
       `Terbaca ${parsed.length} teknisi dengan ${daysDetected} hari jadwal dari file "${file.name}".\n\n` +
-      `Data ini akan MENGGANTI roster & jadwal untuk bulan aktif: ${BULAN[MONTH]} ${YEAR}.\n\n` +
+      `Data ini akan MENGGANTI roster & jadwal untuk kategori ${activeCategory}, bulan aktif: ${BULAN[MONTH]} ${YEAR}.\n\n` +
       `Lanjutkan?`
     );
     if(!ok) return;
@@ -1443,8 +1645,10 @@ document.getElementById('uploadJadwalInput').addEventListener('change', async (e
 
     await persistCurrentMonth();
     populateSektorFilter();
+    updateHeaderSub();
     renderAll();
-    showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} berhasil diisi dari "${file.name}" (${parsed.length} teknisi).`);
+    await refreshNavBadges();
+    showToast(`Jadwal ${BULAN[MONTH]} ${YEAR} (${activeCategory}) berhasil diisi dari "${file.name}" (${parsed.length} teknisi).`);
   }catch(err){
     console.error(err);
     showToast('Gagal membaca file: ' + err.message);
@@ -1471,11 +1675,13 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 
 /* ================= INIT ================= */
 async function init(){
-  roster = await ensureRoster();
+  activeCategory = 'ASSURANCE';
+  roster = await ensureRoster(activeCategory);
   populateSektorFilter();
-  await switchMonth(2026, 6); // buka langsung ke Juli 2026 (bulan sumber data)
+  await switchMonth(2026, 6); // buka langsung ke Juli 2026 (bulan sumber data Assurance)
   populateMonthSelector();
   renderHistoryRow();
+  await refreshNavBadges();
 }
 init();
 </script>
