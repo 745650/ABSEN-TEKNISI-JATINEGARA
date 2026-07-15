@@ -30,6 +30,8 @@
     --amber-dim:#3a2c14;
     --slate:#7488a6;
     --slate-dim:#1c283a;
+    --pm:#ec7fb0;
+    --pm-dim:#3a1f31;
 
     --glow-1:rgba(76,158,255,0.07);
     --glow-2:rgba(164,138,240,0.05);
@@ -56,6 +58,8 @@
     --amber-dim:#3a2c14;
     --slate:#7080ab;
     --slate-dim:#1c2440;
+    --pm:#e57fc0;
+    --pm-dim:#361f36;
 
     --glow-1:rgba(91,140,255,0.10);
     --glow-2:rgba(157,139,245,0.08);
@@ -159,11 +163,11 @@
   /* KPI GRID */
   .kpi-grid{
     display:grid;
-    grid-template-columns:repeat(6,1fr);
+    grid-template-columns:repeat(7,1fr);
     gap:14px;
     margin-bottom:22px;
   }
-  @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
   @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
 
   .kpi-card{
@@ -210,10 +214,12 @@
   .kpi-card.sakit{--accent:var(--red);}
   .kpi-card.cuti{--accent:var(--violet);}
   .kpi-card.izin{--accent:var(--amber);}
+  .kpi-card.pm{--accent:var(--pm);}
   .kpi-card.masuk .kpi-value{color:var(--green);}
   .kpi-card.sakit .kpi-value{color:var(--red);}
   .kpi-card.cuti .kpi-value{color:var(--violet);}
   .kpi-card.izin .kpi-value{color:var(--amber);}
+  .kpi-card.pm .kpi-value{color:var(--pm);}
   .kpi-card.libur .kpi-value{color:var(--slate);}
   .kpi-card.total .kpi-value{color:var(--cyan);}
 
@@ -295,7 +301,8 @@
     color:var(--muted);
   }
   .legend-swatch{
-    width:16px;height:16px;
+    min-width:16px;height:16px;
+    padding:0 3px;
     border-radius:4px;
     display:inline-flex;
     align-items:center;
@@ -360,11 +367,12 @@
 
   .status-pill{
     display:inline-flex;
-    width:22px;height:20px;
+    min-width:22px;height:20px;
+    padding:0 2px;
     align-items:center;
     justify-content:center;
     border-radius:5px;
-    font-size:9.5px;
+    font-size:9px;
     font-weight:700;
     color:#0c1626;
     cursor:pointer;
@@ -382,6 +390,7 @@
   .st-S{background:var(--red);}
   .st-C{background:var(--violet);}
   .st-I{background:var(--amber);}
+  .st-PM{background:var(--pm);}
 
   .schedule-actions{
     display:flex;
@@ -434,6 +443,10 @@
   #masukTodayTable{min-width:0;}
   #masukTodayTable thead th{position:static;}
   #masukTodayTable tbody td{border-right:1px solid var(--border);}
+  #rekapTable{min-width:0;}
+  #rekapTable thead th{position:static;}
+  #rekapTable tbody td{border-right:1px solid var(--border);}
+  #rekapTable tbody tr:hover td{background:rgba(255,255,255,0.02);}
 
   .footnote{
     color:var(--muted-2);
@@ -501,6 +514,11 @@
     <div class="kpi-value" id="kpiIzin">0</div>
     <div class="kpi-foot" id="kpiIzinPct">0% dari total</div>
   </div>
+  <div class="kpi-card pm">
+    <div class="kpi-label"><span>Piket Malam</span><span class="kpi-icon">&#127762;</span></div>
+    <div class="kpi-value" id="kpiPM">0</div>
+    <div class="kpi-foot" id="kpiPMPct">0% dari total</div>
+  </div>
 </div>
 
 <!-- GAUGE + TREND -->
@@ -562,6 +580,7 @@
       <span class="legend-chip"><span class="legend-swatch st-S">S</span>Sakit</span>
       <span class="legend-chip"><span class="legend-swatch st-C">C</span>Cuti</span>
       <span class="legend-chip"><span class="legend-swatch st-I">I</span>Izin</span>
+      <span class="legend-chip"><span class="legend-swatch st-PM">PM</span>Piket Malam</span>
     </div>
   </div>
   <div class="schedule-controls" style="margin-top:-6px;">
@@ -579,6 +598,42 @@
   </div>
   <div class="footnote">
     <b>Catatan:</b> Seluruh data pada dashboard ini adalah data <b>dummy/contoh</b> untuk keperluan simulasi tampilan. Kolom hari ini ditandai dengan warna highlight biru muda pada tabel jadwal. Perubahan status yang kamu klik akan langsung memperbarui KPI, gauge, dan grafik tren &mdash; namun <b>hanya tersimpan selama tab ini terbuka</b> (belum tersambung ke database). Gunakan tombol <b>Export</b> untuk menyimpan hasil edit ke file JSON. Untuk versi produksi, sambungkan sumber data absensi (API/database) ke fungsi <code>generateDummyData()</code> dan ganti fungsi <code>saveEdit()</code> agar mengirim perubahan ke server.
+  </div>
+</div>
+
+<!-- REKAP KEHADIRAN PER TEKNISI -->
+<div class="panel" id="rekapPanel" style="margin-top:22px;">
+  <div class="schedule-controls" style="margin-bottom:14px;">
+    <div>
+      <h2 style="margin-bottom:2px;">Rekap Kehadiran Teknisi &mdash; 1 Bulan</h2>
+      <div class="panel-sub" style="margin-bottom:0;" id="rekapSub">-</div>
+    </div>
+    <div class="edit-hint">Otomatis mengikuti perubahan pada tabel Jadwal Teknisi di atas</div>
+  </div>
+  <div class="table-scroll">
+    <table id="rekapTable" style="min-width:0;">
+      <thead>
+        <tr>
+          <th style="width:44px;">No</th>
+          <th style="text-align:left; padding-left:14px;">ID</th>
+          <th style="text-align:left; padding-left:14px;">Nama Teknisi</th>
+          <th>Masuk</th>
+          <th>Libur</th>
+          <th>Sakit</th>
+          <th>Cuti</th>
+          <th>Izin</th>
+          <th>Piket Malam</th>
+          <th>Total Hari</th>
+          <th>% Kehadiran</th>
+        </tr>
+      </thead>
+      <tbody id="rekapBody"></tbody>
+    </table>
+  </div>
+  <div class="footnote">
+    <b>Standar kehadiran:</b> target minimal <b>22 hari kerja/bulan</b> (Masuk + Piket Malam dihitung setara). Warna % Kehadiran &mdash;
+    <span style="color:var(--green); font-weight:700;">hijau</span> = mencapai target (&ge;22 hari),
+    <span style="color:var(--red); font-weight:700;">merah</span> = belum mencapai target (&lt;22 hari).
   </div>
 </div>
 
@@ -615,6 +670,7 @@ const STATUS = {
   S:{key:'S', label:'Sakit', color:'#f0616a'},
   C:{key:'C', label:'Cuti', color:'#a48af0'},
   I:{key:'I', label:'Izin', color:'#f2b13c'},
+  PM:{key:'PM', label:'Piket Malam', color:'#ec7fb0'},
 };
 
 function seededRandom(seed){
@@ -642,6 +698,7 @@ function generateDummyData(){
         if(r < 0.045) status = 'S';
         else if(r < 0.07) status = 'C';
         else if(r < 0.095) status = 'I';
+        else if(r < 0.13) status = 'PM';
         else status = 'M';
       }
       schedule.push(status);
@@ -656,7 +713,7 @@ const TOTAL_TEKNISI = technicians.length;
 
 /* ================= TODAY STATS ================= */
 function countToday(){
-  const counts = {M:0,L:0,S:0,C:0,I:0};
+  const counts = {M:0,L:0,S:0,C:0,I:0,PM:0};
   technicians.forEach(t=>{
     const st = t.schedule[TODAY_DATE-1];
     counts[st]++;
@@ -673,12 +730,14 @@ document.getElementById('kpiLibur').textContent = todayCounts.L;
 document.getElementById('kpiSakit').textContent = todayCounts.S;
 document.getElementById('kpiCuti').textContent = todayCounts.C;
 document.getElementById('kpiIzin').textContent = todayCounts.I;
+document.getElementById('kpiPM').textContent = todayCounts.PM;
 
 document.getElementById('kpiMasukPct').textContent = pct(todayCounts.M) + '% dari total';
 document.getElementById('kpiLiburPct').textContent = pct(todayCounts.L) + '% dari total';
 document.getElementById('kpiSakitPct').textContent = pct(todayCounts.S) + '% dari total';
 document.getElementById('kpiCutiPct').textContent = pct(todayCounts.C) + '% dari total';
 document.getElementById('kpiIzinPct').textContent = pct(todayCounts.I) + '% dari total';
+document.getElementById('kpiPMPct').textContent = pct(todayCounts.PM) + '% dari total';
 
 /* ================= CLOCK ================= */
 const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
@@ -693,9 +752,10 @@ updateClock();
 setInterval(updateClock, 1000);
 
 /* ================= GAUGE CHART ================= */
-const attendancePct = pct(todayCounts.M);
+const hadirDenomToday = TOTAL_TEKNISI - todayCounts.L;
+const attendancePct = hadirDenomToday > 0 ? Math.round(((todayCounts.M + todayCounts.PM)/hadirDenomToday)*1000)/10 : 0;
 document.getElementById('gaugeNum').textContent = attendancePct + '%';
-document.getElementById('gaugeCaption').textContent = `${todayCounts.M} dari ${TOTAL_TEKNISI} teknisi masuk`;
+document.getElementById('gaugeCaption').textContent = `${todayCounts.M + todayCounts.PM} dari ${hadirDenomToday} teknisi masuk (di luar libur)`;
 
 const gaugeChart = new Chart(document.getElementById('gaugeChart'), {
   type: 'doughnut',
@@ -719,9 +779,14 @@ const gaugeChart = new Chart(document.getElementById('gaugeChart'), {
 const dailyPct = [];
 const dayLabels = [];
 for(let d=1; d<=DAYS_IN_MONTH; d++){
-  let masukCount = 0;
-  technicians.forEach(t=>{ if(t.schedule[d-1] === 'M') masukCount++; });
-  dailyPct.push(Math.round((masukCount/TOTAL_TEKNISI)*1000)/10);
+  let masukCount = 0, liburCount = 0;
+  technicians.forEach(t=>{
+    const st = t.schedule[d-1];
+    if(st === 'M' || st === 'PM') masukCount++;
+    else if(st === 'L') liburCount++;
+  });
+  const denom = TOTAL_TEKNISI - liburCount;
+  dailyPct.push(denom > 0 ? Math.round((masukCount/denom)*1000)/10 : 0);
   dayLabels.push(d);
 }
 const avgPct = Math.round((dailyPct.reduce((a,b)=>a+b,0)/dailyPct.length)*10)/10;
@@ -807,11 +872,11 @@ renderScheduleBody();
 /* ================= DAFTAR TEKNISI MASUK HARI INI ================= */
 function renderMasukTodayTable(){
   const masukList = technicians
-    .filter(t => t.schedule[TODAY_DATE-1] === 'M')
+    .filter(t => t.schedule[TODAY_DATE-1] === 'M' || t.schedule[TODAY_DATE-1] === 'PM')
     .sort((a,b) => a.name.localeCompare(b.name));
 
   document.getElementById('masukTodaySub').textContent =
-    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
+    `${masukList.length} dari ${TOTAL_TEKNISI} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
 
   const tbody = document.getElementById('masukTodayBody');
   if(masukList.length === 0){
@@ -820,19 +885,54 @@ function renderMasukTodayTable(){
   }
   let html = '';
   masukList.forEach((t, idx) => {
+    const st = t.schedule[TODAY_DATE-1];
     html += `<tr>
       <td>${idx+1}</td>
       <td style="text-align:left; font-weight:600; color:var(--muted);">${t.id}</td>
       <td style="text-align:left; font-weight:600;">${t.name}</td>
-      <td><span class="status-pill st-M" style="cursor:default;">M</span></td>
+      <td><span class="status-pill st-${st}" style="cursor:default;">${st}</span></td>
     </tr>`;
   });
   tbody.innerHTML = html;
 }
 renderMasukTodayTable();
 
+/* ================= REKAP KEHADIRAN 1 BULAN ================= */
+const MIN_HARI_KERJA = 22; // ambang batas minimal hari kerja (Masuk + Piket Malam) per bulan
+
+function renderRekapTable(){
+  document.getElementById('rekapSub').textContent =
+    `Total ${DAYS_IN_MONTH} hari pada ${BULAN[MONTH]} ${YEAR} \u2014 ${TOTAL_TEKNISI} teknisi \u2014 target minimal ${MIN_HARI_KERJA} hari kerja/bulan`;
+
+  let html = '';
+  technicians.forEach((t, idx) => {
+    const c = {M:0,L:0,S:0,C:0,I:0,PM:0};
+    t.schedule.forEach(st => c[st]++);
+    const hariKerja = DAYS_IN_MONTH - c.L; // hari kerja efektif (di luar libur terjadwal)
+    const hadirTotal = c.M + c.PM; // Piket Malam disamakan dengan Masuk
+    const kehadiranPct = hariKerja > 0 ? Math.round((hadirTotal/hariKerja)*1000)/10 : 0;
+    const memenuhiTarget = hadirTotal >= MIN_HARI_KERJA;
+
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted); font-weight:600;">${t.id}</td>
+      <td style="text-align:left; padding-left:14px; font-weight:600;">${t.name}</td>
+      <td style="color:var(--green); font-weight:700;">${c.M}</td>
+      <td style="color:var(--slate); font-weight:700;">${c.L}</td>
+      <td style="color:var(--red); font-weight:700;">${c.S}</td>
+      <td style="color:var(--violet); font-weight:700;">${c.C}</td>
+      <td style="color:var(--amber); font-weight:700;">${c.I}</td>
+      <td style="color:var(--pm); font-weight:700;">${c.PM}</td>
+      <td style="color:var(--muted);">${DAYS_IN_MONTH}</td>
+      <td style="font-weight:700; color:${memenuhiTarget?'var(--green)':'var(--red)'};">${kehadiranPct}%</td>
+    </tr>`;
+  });
+  document.getElementById('rekapBody').innerHTML = html;
+}
+renderRekapTable();
+
 /* ================= EDIT / RECALCULATE LOGIC ================= */
-const STATUS_ORDER = ['M','L','S','C','I'];
+const STATUS_ORDER = ['M','L','S','C','I','PM'];
 
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -844,7 +944,7 @@ function showToast(msg){
 
 function recalcAll(){
   // recompute today's counts
-  const counts = {M:0,L:0,S:0,C:0,I:0};
+  const counts = {M:0,L:0,S:0,C:0,I:0,PM:0};
   technicians.forEach(t=>{ counts[t.schedule[TODAY_DATE-1]]++; });
 
   document.getElementById('kpiMasuk').textContent = counts.M;
@@ -852,24 +952,26 @@ function recalcAll(){
   document.getElementById('kpiSakit').textContent = counts.S;
   document.getElementById('kpiCuti').textContent = counts.C;
   document.getElementById('kpiIzin').textContent = counts.I;
+  document.getElementById('kpiPM').textContent = counts.PM;
   document.getElementById('kpiMasukPct').textContent = pct(counts.M) + '% dari total';
   document.getElementById('kpiLiburPct').textContent = pct(counts.L) + '% dari total';
   document.getElementById('kpiSakitPct').textContent = pct(counts.S) + '% dari total';
   document.getElementById('kpiCutiPct').textContent = pct(counts.C) + '% dari total';
   document.getElementById('kpiIzinPct').textContent = pct(counts.I) + '% dari total';
+  document.getElementById('kpiPMPct').textContent = pct(counts.PM) + '% dari total';
 
   // recompute gauge
-  const newAttendancePct = pct(counts.M);
+  const newAttendancePct = pct(counts.M + counts.PM);
   gaugeChart.data.datasets[0].data = [newAttendancePct, 100-newAttendancePct];
   gaugeChart.update();
   document.getElementById('gaugeNum').textContent = newAttendancePct + '%';
-  document.getElementById('gaugeCaption').textContent = `${counts.M} dari ${TOTAL_TEKNISI} teknisi masuk`;
+  document.getElementById('gaugeCaption').textContent = `${counts.M + counts.PM} dari ${TOTAL_TEKNISI} teknisi masuk`;
 
   // recompute trend line (whole month)
   const newDaily = [];
   for(let d=1; d<=DAYS_IN_MONTH; d++){
     let m = 0;
-    technicians.forEach(t=>{ if(t.schedule[d-1]==='M') m++; });
+    technicians.forEach(t=>{ const st = t.schedule[d-1]; if(st==='M' || st==='PM') m++; });
     newDaily.push(Math.round((m/TOTAL_TEKNISI)*1000)/10);
   }
   const newAvg = Math.round((newDaily.reduce((a,b)=>a+b,0)/newDaily.length)*10)/10;
@@ -879,6 +981,9 @@ function recalcAll(){
 
   // recompute daftar teknisi masuk hari ini
   renderMasukTodayTable();
+
+  // recompute rekap bulanan
+  renderRekapTable();
 }
 
 // Save/log edit — replace this with an API call for production use
