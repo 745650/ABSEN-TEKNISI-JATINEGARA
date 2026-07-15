@@ -1105,12 +1105,12 @@ function renderKPI(){
 /* ================= RENDER: GAUGE ================= */
 let gaugeChart = null;
 function renderGauge(counts){
-  const denom = TOTAL_TEKNISI - counts.L;
+  const denom = TOTAL_TEKNISI;
   const attendancePct = denom > 0 ? Math.round(((counts.M + counts.PM)/denom)*1000)/10 : 0;
-  document.getElementById('gaugeNum').textContent = attendancePct + '%';
+  document.getElementById('gaugeNum').textContent = Math.round(attendancePct) + '%';
   document.getElementById('gaugeCaption').textContent = IS_CURRENT_MONTH
-    ? `${counts.M + counts.PM} dari ${denom} teknisi masuk (di luar libur) — hari ini`
-    : `${counts.M + counts.PM} dari ${denom} teknisi masuk (di luar libur) — tanggal ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
+    ? `${counts.M + counts.PM} dari ${denom} teknisi masuk — hari ini`
+    : `${counts.M + counts.PM} dari ${denom} teknisi masuk — tanggal ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}`;
   if(!gaugeChart){
     gaugeChart = new Chart(document.getElementById('gaugeChart'), {
       type: 'doughnut',
