@@ -998,12 +998,12 @@ function parseJadwalSheet(aoa){
       headerRow = r;
       row.forEach((c,i)=>{
         const label = String(c||'').trim().toUpperCase();
-        if(label === 'NO') colNo = i;
-        else if(label === 'NAMA') colNama = i;
-        else if(label === 'SEKTOR') colSektor = i;
-        else if(label === 'UNIT') colUnit = i;
-        else if(label === 'NO HP' || label === 'NOHP') colNoHp = i;
-        else if(label === 'NIK') colNik = i;
+        if(label === 'NO' && colNo === -1) colNo = i;
+        else if(label === 'NAMA' && colNama === -1) colNama = i;
+        else if(label === 'SEKTOR' && colSektor === -1) colSektor = i;
+        else if(label === 'UNIT' && colUnit === -1) colUnit = i;
+        else if((label === 'NO HP' || label === 'NOHP') && colNoHp === -1) colNoHp = i;
+        else if(label === 'NIK' && colNik === -1) colNik = i;
       });
       break;
     }
