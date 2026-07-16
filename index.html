@@ -878,7 +878,7 @@
     </div>
   </div>
   <div class="schedule-controls" style="margin-top:-6px;">
-    <div class="edit-hint">&#128196; Data diambil langsung dari Google Sheets (sumber: sheet &ldquo;JADWAL &lt;BULAN&gt;&rdquo;) &mdash; untuk mengubah jadwal, edit langsung di spreadsheet lalu klik Refresh Data.</div>
+    <div class="edit-hint">&#9998;&#65039; Klik sel status untuk mengubah (&ndash; &rarr; M &rarr; L &rarr; S &rarr; C &rarr; I &rarr; PM) &mdash; perubahan langsung ditulis ke Google Sheets.</div>
     <div class="schedule-actions">
       <button class="btn primary" id="btnExport">&#11015; Export (JSON)</button>
     </div>
@@ -890,7 +890,7 @@
     </table>
   </div>
   <div class="footnote" id="scheduleFootnote">
-    <b>Sumber data:</b> Google Sheets &ldquo;JADWAL KERJA - JATINEGARA&rdquo;, sheet/tab bernama sesuai <b>Bulan Aktif</b> (contoh: <b>JADWAL JULI</b> untuk bulan Juli, otomatis mengikuti nama bulan yang dipilih). Kolom <b>UNIT</b> pada sheet menentukan kategori: <b>ASSR</b> &rarr; Assurance, <b>PROVI</b> &rarr; Provisioning, <b>B2B</b> &rarr; B2B. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Data di-refresh otomatis secara berkala, atau klik <b>Refresh Data</b> kapan saja untuk mengambil data terbaru.
+    <b>Sumber data:</b> Google Sheets &ldquo;JADWAL KERJA - JATINEGARA&rdquo;, sheet/tab bernama sesuai <b>Bulan Aktif</b> (contoh: <b>JADWAL JULI</b> untuk bulan Juli, otomatis mengikuti nama bulan yang dipilih). Kolom <b>UNIT</b> pada sheet menentukan kategori: <b>ASSR</b> &rarr; Assurance, <b>PROVI</b> &rarr; Provisioning, <b>B2B</b> &rarr; B2B. Gunakan filter <b>Sektor</b> untuk melihat jadwal per Sektor Jatinegara 1&ndash;4. Klik sel status untuk mengubahnya &mdash; perubahan langsung tersimpan ke Google Sheets (dua arah), jadi tim lain yang buka spreadsheet-nya langsung lihat update yang sama. Data juga di-refresh otomatis secara berkala, atau klik <b>Refresh Data</b> kapan saja untuk mengambil data terbaru dari Sheets.
   </div>
 </div>
 
@@ -965,6 +965,32 @@ function sheetCsvUrl(sheetName){
 // Kolom UNIT di sheet -> kategori di sidebar
 const UNIT_TO_CATEGORY = { 'ASSR':'ASSURANCE', 'PROVI':'PROVISIONING', 'B2B':'B2B' };
 
+/* ================= TULIS BALIK KE GOOGLE SHEETS (via Apps Script Web App) =================
+   1. Deploy file apps_script_write_backend.gs sebagai Web App di spreadsheet ini (lihat
+      instruksi di dalam file tsb).
+   2. Ganti nilai APPS_SCRIPT_URL di bawah ini dengan "Web app URL" hasil deploy
+      (bentuknya: https://script.google.com/macros/s/AKfycbx.../exec) */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwZVaiSVFi_mZaL2zPh0LsIW6dsxfxAAM1Kq2uf42kJt2RdBNlnmUC0QF1qCiDHAXXFg/exec';
+
+// Kode internal dashboard -> kode yang ditulis balik ke sel Sheets (mengikuti konvensi sheet asli)
+const INTERNAL_TO_SHEET_CODE = { X:'', M:'M', L:'L', S:'S', C:'C', I:'I', PM:'P' };
+
+async function writeCellToSheet(sheetName, row, col, value){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('GANTI_DENGAN_URL') !== -1){
+    throw new Error('APPS_SCRIPT_URL belum diisi. Deploy dulu Apps Script Web App-nya, lalu isi URL-nya di kode dashboard.');
+  }
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight (Apps Script tidak menangani OPTIONS)
+    body: JSON.stringify({ sheet: sheetName, row, col, value })
+  });
+  let data;
+  try{ data = await res.json(); }
+  catch(e){ throw new Error('Respons dari Apps Script tidak valid.'); }
+  if(!data || !data.success){ throw new Error((data && data.error) || 'Gagal menyimpan ke Google Sheets.'); }
+  return data;
+}
+
 const STATUS = {
   X:{key:'X', label:'Belum Diisi', color:'#3a3f4a'},
   M:{key:'M', label:'Masuk', color:'#3fd393'},
@@ -995,6 +1021,10 @@ function normalizeStatusCode(raw){
   if(STATUS_ORDER.includes(s)) return s;
   return 'X';
 }
+
+// Baris/kolom absolut di sheet asli, sesuai SHEET_DATA_RANGE ('A8:AK56') -> dipakai untuk tulis balik ke Sheets
+const RANGE_START_ROW = 8; // baris pertama dari SHEET_DATA_RANGE
+const RANGE_START_COL = 1; // kolom A = 1
 
 // Cari baris header (mengandung "NAMA"), lalu ekstrak semua baris teknisi sampai baris nama kosong pertama
 // (menghindari tabel rekap tambahan di kolom-kolom lain pada sheet yang sama).
@@ -1040,6 +1070,7 @@ function parseJadwalSheet(aoa){
     for(let i=lastIdentityCol+1; i<=maxCol; i++) dayCols.push(i);
   }
   const dataStartRow = (dateRow !== -1 ? dateRow : headerRow) + 1;
+  const dayColsAbs = dayCols.map(c => RANGE_START_COL + c);
 
   const result = [];
   for(let r = dataStartRow; r < aoa.length; r++){
@@ -1053,7 +1084,8 @@ function parseJadwalSheet(aoa){
     const id = nik || ('NM' + name.replace(/\s+/g,'').toUpperCase().slice(0,16) + r);
     const category = UNIT_TO_CATEGORY[unitRaw] || null;
     const schedule = dayCols.map(c => normalizeStatusCode(row[c]));
-    result.push({ id, name, sektor, unit: unitRaw, category, nohp, schedule });
+    const sheetRow = RANGE_START_ROW + r;
+    result.push({ id, name, sektor, unit: unitRaw, category, nohp, schedule, sheetRow, dayColsAbs });
   }
   return result;
 }
@@ -1230,7 +1262,7 @@ function renderScheduleBody(){
       const d = i+1;
       const isToday = IS_CURRENT_MONTH && d === TODAY_DATE;
       const label = st === 'X' ? '&ndash;' : st;
-      bodyHtml += `<td class="${isToday?'today-col':''}"><span class="status-pill st-${st}" style="cursor:default;">${label}</span></td>`;
+      bodyHtml += `<td class="${isToday?'today-col':''} editable-cell" data-techid="${t.id}" data-day="${i}"><span class="status-pill st-${st}">${label}</span></td>`;
     });
     bodyHtml += `</tr>`;
   });
@@ -1435,6 +1467,46 @@ document.getElementById('sektorFilter').addEventListener('change', (e)=>{
   renderScheduleBody();
   renderMasukTodayTable();
   renderRekapTable();
+});
+
+/* ================= EVENT: EDIT SEL -> TULIS BALIK KE GOOGLE SHEETS ================= */
+document.getElementById('scheduleBody').addEventListener('click', async (e)=>{
+  const cell = e.target.closest('.editable-cell');
+  if(!cell) return;
+  const techId = cell.dataset.techid;
+  const dIdx = parseInt(cell.dataset.day, 10);
+  const t = technicians.find(x => x.id === techId);
+  if(!t) return;
+
+  const prevValue = t.schedule[dIdx];
+  const nextIdx = (STATUS_ORDER.indexOf(prevValue) + 1) % STATUS_ORDER.length;
+  const next = STATUS_ORDER[nextIdx];
+
+  // Optimistic update di tampilan dulu
+  t.schedule[dIdx] = next;
+  const pill = cell.querySelector('.status-pill');
+  pill.className = `status-pill st-${next}`;
+  pill.innerHTML = next === 'X' ? '&ndash;' : next;
+  refreshDerived();
+
+  const row = t.sheetRow;
+  const col = t.dayColsAbs[dIdx];
+  const sheetCode = INTERNAL_TO_SHEET_CODE[next];
+  const sheetName = sheetNameForMonth(MONTH);
+
+  showToast('Menyimpan ke Google Sheets...');
+  try{
+    await writeCellToSheet(sheetName, row, col, sheetCode);
+    showToast(`${t.name} — tanggal ${dIdx+1}: tersimpan ke Sheets sebagai "${STATUS[next].label}"`);
+  }catch(err){
+    console.error(err);
+    // Gagal simpan -> kembalikan tampilan ke nilai semula
+    t.schedule[dIdx] = prevValue;
+    pill.className = `status-pill st-${prevValue}`;
+    pill.innerHTML = prevValue === 'X' ? '&ndash;' : prevValue;
+    refreshDerived();
+    showToast('Gagal menyimpan ke Sheets: ' + err.message);
+  }
 });
 
 /* ================= EVENT: REFRESH DATA ================= */
