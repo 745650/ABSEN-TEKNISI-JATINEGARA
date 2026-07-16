@@ -950,8 +950,15 @@ document.querySelectorAll('.theme-opt').forEach(btn=>{
 const SPREADSHEET_ID = '1uQZQ-idj-kcOMiu5QR5ATGCffjrkuR7RqKcOLmJq6do';
 // Nama sheet/tab mengikuti pola "JADWAL <BULAN>" (mis. JADWAL JULI, JADWAL AGUSTUS, dst)
 function sheetNameForMonth(m){ return 'JADWAL ' + BULAN_UPPER[m]; }
+// Data teknisi & jadwal selalu berada di range A8:AK56:
+//   baris 8 = header (NO, NAMA, SEKTOR, UNIT, NO HP, NIK + nama hari)
+//   baris 9 = baris angka tanggal (1..31)
+//   baris 10-56 = data teknisi
+// Membatasi range ini juga otomatis memotong tabel rekap tambahan di kolom kanan (setelah AK)
+// dan baris-baris statistik di bawah (setelah baris 56), jadi tidak ikut kebaca.
+const SHEET_DATA_RANGE = 'A8:AK56';
 function sheetCsvUrl(sheetName){
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&range=${SHEET_DATA_RANGE}`;
 }
 // Kolom UNIT di sheet -> kategori di sidebar
 const UNIT_TO_CATEGORY = { 'ASSR':'ASSURANCE', 'PROVI':'PROVISIONING', 'B2B':'B2B' };
