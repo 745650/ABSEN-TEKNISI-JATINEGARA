@@ -100,6 +100,17 @@
     font-weight:700;
     margin:0 0 6px;
     letter-spacing:0.2px;
+    background:linear-gradient(90deg, var(--text) 0%, var(--cyan) 25%, var(--violet) 50%, var(--text) 75%, var(--cyan) 100%);
+    background-size:300% 100%;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation:titleShine 7s ease-in-out infinite;
+  }
+  @keyframes titleShine{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
   }
   .title-block .sub{color:var(--muted);font-size:13.5px;}
   .live-badge{
@@ -745,7 +756,7 @@
       <span style="color:var(--muted);font-size:12px;">diperbarui otomatis</span>
     </div>
     <h1>DASBOARD ABSEN TEKNISI - JATINEGARA</h1>
-    <div class="sub" id="headerSub">STO Jatinegara (JTN) &mdash; Kategori: Assurance &mdash; input manual per bulan, tersimpan otomatis</div>
+    <div class="sub" id="headerSub">STO Jatinegara (JTN) &mdash; Kategori: Assurance</div>
   </div>
   <div class="clock-box">
     <div class="theme-switch" id="themeSwitch">
@@ -1403,11 +1414,7 @@ async function loadMonthData(y, m){
 function updateHeaderSub(){
   const catLabel = activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase();
   const sub = document.getElementById('headerSub');
-  if(lastFetchError){
-    sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel} — Gagal mengambil data: ${lastFetchError}`;
-  } else {
-    sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel} — ${TOTAL_TEKNISI} teknisi — data live dari Google Sheets`;
-  }
+  sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel}`;
 }
 async function refreshNavBadges(){
   CATEGORIES.forEach(cat=>{
