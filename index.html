@@ -1397,10 +1397,18 @@ function renderScheduleBody(){
 }
 
 /* ================= RENDER: TEKNISI MASUK HARI/TANGGAL AKTIF ================= */
+function sektorSortKey(sektor){
+  const m = String(sektor||'').match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 999;
+}
 function renderMasukTodayTable(){
   const masukList = getFiltered()
     .filter(t => t.schedule[TODAY_DATE-1] === 'M' || t.schedule[TODAY_DATE-1] === 'PM')
-    .sort((a,b) => a.name.localeCompare(b.name));
+    .sort((a,b) => {
+      const sa = sektorSortKey(a.sektor), sb = sektorSortKey(b.sektor);
+      if(sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name);
+    });
 
   document.getElementById('masukTodaySub').textContent =
     `${masukList.length} dari ${getFiltered().length} teknisi terjadwal masuk (termasuk piket malam) pada ${TODAY_DATE} ${BULAN[MONTH]} ${YEAR}${IS_CURRENT_MONTH ? ' (hari ini)' : ''}${activeSektor!=='ALL' ? ' — '+activeSektor : ''}`;
