@@ -294,6 +294,35 @@
   }
   .legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
 
+  /* SEKTOR DONUT LEGEND */
+  .sektor-legend-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:7px 0;
+    border-bottom:1px solid var(--border);
+    font-size:12px;
+  }
+  .sektor-legend-row:last-child{border-bottom:none;}
+  .sektor-legend-name{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--text);
+    font-weight:600;
+    min-width:0;
+  }
+  .sektor-legend-name .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .sektor-legend-name span.label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sektor-legend-stat{
+    text-align:right;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .sektor-legend-pct{font-weight:700;color:var(--text);}
+  .sektor-legend-count{color:var(--muted-2);font-size:10.5px;}
+
   /* SCHEDULE TABLE */
   .schedule-panel{margin-bottom:10px;}
   .schedule-controls{
@@ -951,27 +980,37 @@
 </div>
 
 <!-- DAFTAR TEKNISI MASUK HARI INI -->
-<div class="panel" id="masukTodayPanel" style="margin-bottom:22px;">
-  <div class="schedule-controls" style="margin-bottom:12px;">
-    <div>
-      <h2 style="margin-bottom:2px;">Teknisi Masuk Hari Ini</h2>
-      <div class="panel-sub" style="margin-bottom:0;" id="masukTodaySub">-</div>
+<div class="main-row" id="masukTodayRow" style="grid-template-columns:1fr 320px; margin-bottom:22px;">
+  <div class="panel" id="masukTodayPanel" style="margin-bottom:0;">
+    <div class="schedule-controls" style="margin-bottom:12px;">
+      <div>
+        <h2 style="margin-bottom:2px;">Teknisi Masuk Hari Ini</h2>
+        <div class="panel-sub" style="margin-bottom:0;" id="masukTodaySub">-</div>
+      </div>
+      <div class="edit-hint">Otomatis mengikuti perubahan pada tabel Jadwal Teknisi di bawah</div>
     </div>
-    <div class="edit-hint">Otomatis mengikuti perubahan pada tabel Jadwal Teknisi di bawah</div>
+    <div class="table-scroll">
+      <table id="masukTodayTable" style="min-width:0;">
+        <thead>
+          <tr>
+            <th style="width:50px;">No</th>
+            <th class="name-col" style="position:static;">NIK</th>
+            <th class="name-col" style="position:static; text-align:left;">Nama Teknisi</th>
+            <th class="name-col" style="position:static; text-align:left;">Sektor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="masukTodayBody"></tbody>
+      </table>
+    </div>
   </div>
-  <div class="table-scroll">
-    <table id="masukTodayTable" style="min-width:0;">
-      <thead>
-        <tr>
-          <th style="width:50px;">No</th>
-          <th class="name-col" style="position:static;">NIK</th>
-          <th class="name-col" style="position:static; text-align:left;">Nama Teknisi</th>
-          <th class="name-col" style="position:static; text-align:left;">Sektor</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="masukTodayBody"></tbody>
-    </table>
+  <div class="panel">
+    <h2>Kehadiran per Sektor</h2>
+    <div class="panel-sub">Persentase teknisi masuk (termasuk piket malam) hari ini</div>
+    <div style="display:flex; justify-content:center; margin:6px 0 12px;">
+      <canvas id="sektorDonutChart" width="200" height="200"></canvas>
+    </div>
+    <div id="sektorDonutLegend"></div>
   </div>
 </div>
 
@@ -1432,6 +1471,66 @@ function renderMasukTodayTable(){
   tbody.innerHTML = html;
 }
 
+/* ================= RENDER: DONUT KEHADIRAN PER SEKTOR ================= */
+let sektorDonutChart = null;
+const SEKTOR_COLORS = ['#4c9eff','#a48af0','#f2b13c','#ec7fb0','#7488a6','#3fd393','#f0616a'];
+function renderSektorDonut(){
+  const groups = {};
+  technicians.forEach(t=>{
+    const key = t.sektor || 'Tanpa Sektor';
+    if(!groups[key]) groups[key] = { total:0, hadir:0 };
+    groups[key].total++;
+    const st = t.schedule[TODAY_DATE-1];
+    if(st === 'M' || st === 'PM') groups[key].hadir++;
+  });
+  const sektorNames = Object.keys(groups).sort((a,b) => sektorSortKey(a) - sektorSortKey(b));
+  const legendEl = document.getElementById('sektorDonutLegend');
+
+  if(sektorNames.length === 0){
+    if(sektorDonutChart){ sektorDonutChart.destroy(); sektorDonutChart = null; }
+    legendEl.innerHTML = '<div style="text-align:center;color:var(--muted-2);font-size:12px;padding:12px 0;">Tidak ada data sektor.</div>';
+    return;
+  }
+
+  const hadirCounts = sektorNames.map(s => groups[s].hadir);
+  const totalCounts = sektorNames.map(s => groups[s].total);
+  const pcts = sektorNames.map((s,i) => totalCounts[i] > 0 ? Math.round((hadirCounts[i]/totalCounts[i])*100) : 0);
+  const colors = sektorNames.map((_,i) => SEKTOR_COLORS[i % SEKTOR_COLORS.length]);
+
+  const canvas = document.getElementById('sektorDonutChart');
+  if(!sektorDonutChart){
+    sektorDonutChart = new Chart(canvas, {
+      type:'doughnut',
+      data:{
+        labels: sektorNames,
+        datasets:[{ data: hadirCounts, backgroundColor: colors, borderWidth:2, borderColor:'#ffffff' }]
+      },
+      options:{
+        responsive:false,
+        cutout:'62%',
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label:(ctx) => `${ctx.label}: ${ctx.parsed} teknisi (${pcts[ctx.dataIndex]}%)` } }
+        }
+      }
+    });
+  } else {
+    sektorDonutChart.data.labels = sektorNames;
+    sektorDonutChart.data.datasets[0].data = hadirCounts;
+    sektorDonutChart.data.datasets[0].backgroundColor = colors;
+    sektorDonutChart.update();
+  }
+
+  let legendHtml = '';
+  sektorNames.forEach((s,i)=>{
+    legendHtml += `<div class="sektor-legend-row">
+      <div class="sektor-legend-name"><span class="legend-dot" style="background:${colors[i]};"></span><span class="label">${s}</span></div>
+      <div class="sektor-legend-stat"><div class="sektor-legend-pct">${pcts[i]}%</div><div class="sektor-legend-count">${hadirCounts[i]}/${totalCounts[i]} teknisi</div></div>
+    </div>`;
+  });
+  legendEl.innerHTML = legendHtml;
+}
+
 /* ================= RENDER: REKAP KEHADIRAN 1 BULAN ================= */
 function renderRekapTable(){
   const list = getFiltered();
@@ -1485,6 +1584,7 @@ function renderAll(){
   renderGauge(counts);
   renderTrend();
   renderMasukTodayTable();
+  renderSektorDonut();
   renderRekapTable();
 }
 function refreshDerived(){
@@ -1492,6 +1592,7 @@ function refreshDerived(){
   renderGauge(counts);
   renderTrend();
   renderMasukTodayTable();
+  renderSektorDonut();
   renderRekapTable();
 }
 
