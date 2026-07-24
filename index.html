@@ -591,6 +591,10 @@
   #rekapTable thead th{position:static;}
   #rekapTable tbody td{border-right:1px solid var(--border);}
   #rekapTable tbody tr:hover td{background:rgba(255,255,255,0.02);}
+  #teamLeaderTable{min-width:0;}
+  #teamLeaderTable thead th{position:static;}
+  #teamLeaderTable tbody td{border-right:1px solid var(--border);}
+  #teamLeaderTable tbody tr:hover td{background:rgba(255,255,255,0.02);}
 
   .footnote{
     color:var(--muted-2);
@@ -889,6 +893,12 @@
         <div class="sidebar-nav-item" data-category="B2B"><span class="nav-icon">&#127970;</span><span>B2B</span><span class="nav-badge" id="navBadgeB2B">0</span></div>
       </div>
     </div>
+    <div>
+      <div class="sidebar-section-label">LAINNYA</div>
+      <div class="sidebar-nav" id="otherNav">
+        <div class="sidebar-nav-item" data-view="TEAM_LEADER"><span class="nav-icon">&#129489;&#8205;&#128188;</span><span>Team Leader</span></div>
+      </div>
+    </div>
     <div class="sidebar-foot">Data diambil langsung dari Google Sheets berdasarkan kolom UNIT (ASSR/PROVI/B2B). Edit jadwal di spreadsheet, lalu Refresh Data.</div>
   </aside>
 
@@ -912,6 +922,8 @@
     <div class="date" id="clockDate">-</div>
   </div>
 </header>
+
+<div id="dashboardView">
 
 <!-- KPI CARDS -->
 <div class="kpi-grid">
@@ -1099,6 +1111,40 @@
   </div>
 </div>
 
+</div><!-- /dashboardView -->
+
+<!-- TEAM LEADER VIEW -->
+<div id="teamLeaderView" style="display:none;">
+  <div class="panel" style="margin-bottom:22px;">
+    <div class="schedule-controls" style="margin-bottom:14px;">
+      <div>
+        <h2 style="margin-bottom:2px;">Team Leader</h2>
+        <div class="panel-sub" style="margin-bottom:0;" id="teamLeaderSub">-</div>
+      </div>
+      <button class="btn primary" id="btnRefreshTeamLeader">&#128260; Refresh Data</button>
+    </div>
+    <div class="table-scroll">
+      <table id="teamLeaderTable" style="min-width:0;">
+        <thead>
+          <tr>
+            <th style="width:44px;">No</th>
+            <th style="text-align:left; padding-left:14px;">Jobdesk</th>
+            <th style="text-align:left; padding-left:14px;">NIK</th>
+            <th style="text-align:left; padding-left:14px;">Nama</th>
+            <th style="text-align:left; padding-left:14px;">Email Corporate</th>
+            <th style="text-align:left; padding-left:14px;">No HP</th>
+            <th style="text-align:left; padding-left:14px;">ID Telegram</th>
+          </tr>
+        </thead>
+        <tbody id="teamLeaderBody"></tbody>
+      </table>
+    </div>
+    <div class="footnote">
+      <b>Sumber data:</b> Google Sheets sheet/tab &ldquo;<b>TEAM LEADER</b>&rdquo; pada spreadsheet yang sama dengan jadwal teknisi. Data ini bersifat tampilan saja (read-only) dari dashboard &mdash; untuk mengubahnya, edit langsung di sheet &ldquo;TEAM LEADER&rdquo; lalu klik <b>Refresh Data</b>.
+    </div>
+  </div>
+</div><!-- /teamLeaderView -->
+
 <div class="toast" id="toast"></div>
 
   </div><!-- /main-content -->
@@ -1118,6 +1164,8 @@ document.querySelectorAll('.theme-opt').forEach(btn=>{
 const SPREADSHEET_ID = '1uQZQ-idj-kcOMiu5QR5ATGCffjrkuR7RqKcOLmJq6do';
 // Nama sheet/tab mengikuti pola "JADWAL <BULAN>" (mis. JADWAL JULI, JADWAL AGUSTUS, dst)
 function sheetNameForMonth(m){ return 'JADWAL ' + BULAN_UPPER[m]; }
+// Nama sheet/tab berisi data Team Leader
+const TEAM_LEADER_SHEET_NAME = 'TEAM LEADER';
 // Data teknisi & jadwal selalu berada di range A8:AK56:
 //   baris 8 = header (NO, NAMA, SEKTOR, UNIT, NO HP, NIK + nama hari)
 //   baris 9 = baris angka tanggal (1..31)
@@ -1125,8 +1173,11 @@ function sheetNameForMonth(m){ return 'JADWAL ' + BULAN_UPPER[m]; }
 // Membatasi range ini juga otomatis memotong tabel rekap tambahan di kolom kanan (setelah AK)
 // dan baris-baris statistik di bawah (setelah baris 56), jadi tidak ikut kebaca.
 const SHEET_DATA_RANGE = 'A8:AK56';
-function sheetCsvUrl(sheetName){
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&range=${SHEET_DATA_RANGE}`;
+// Range yang dipakai untuk sheet Team Leader (struktur lebih sederhana, kolom lebih sedikit)
+const TEAM_LEADER_RANGE = 'A1:Z200';
+function sheetCsvUrl(sheetName, range){
+  const r = range || SHEET_DATA_RANGE;
+  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&range=${r}`;
 }
 // Kolom UNIT di sheet -> kategori di sidebar
 const UNIT_TO_CATEGORY = { 'ASSR':'ASSURANCE', 'PROVI':'PROVISIONING', 'B2B':'B2B' };
@@ -1256,6 +1307,49 @@ function parseJadwalSheet(aoa){
   return result;
 }
 
+// Cari baris header (mengandung "NAMA") pada sheet Team Leader, lalu petakan kolom yang diminta:
+// JOBDESK, NIK, NAMA, EMAIL CORPORATE, NO HP, ID TELEGRAM
+function parseTeamLeaderSheet(aoa){
+  const wanted = {
+    jobdesk: ['JOBDESK','JOB DESK'],
+    nik: ['NIK'],
+    nama: ['NAMA'],
+    email: ['EMAIL CORPORATE','EMAIL'],
+    nohp: ['NO HP','NOHP','NO. HP'],
+    telegram: ['ID TELEGRAM','TELEGRAM','ID TELEGRAM (@USERNAME)']
+  };
+  let headerRow = -1;
+  const colMap = {};
+  for(let r=0; r<Math.min(aoa.length, 15); r++){
+    const row = (aoa[r]||[]).map(c => String(c||'').trim().toUpperCase());
+    if(row.includes('NAMA')){
+      headerRow = r;
+      Object.keys(wanted).forEach(key=>{
+        colMap[key] = row.findIndex(c => wanted[key].includes(c));
+      });
+      break;
+    }
+  }
+  if(headerRow === -1 || colMap.nama === undefined || colMap.nama === -1){
+    throw new Error('Kolom "NAMA" tidak ditemukan di sheet TEAM LEADER.');
+  }
+  const result = [];
+  for(let r = headerRow+1; r < aoa.length; r++){
+    const row = aoa[r] || [];
+    const nama = String(row[colMap.nama]||'').trim();
+    if(!nama) break; // berhenti begitu baris nama kosong
+    result.push({
+      jobdesk: colMap.jobdesk !== -1 ? String(row[colMap.jobdesk]||'').trim() : '',
+      nik: colMap.nik !== -1 ? String(row[colMap.nik]||'').trim() : '',
+      nama,
+      email: colMap.email !== -1 ? String(row[colMap.email]||'').trim() : '',
+      nohp: colMap.nohp !== -1 ? String(row[colMap.nohp]||'').trim() : '',
+      telegram: colMap.telegram !== -1 ? String(row[colMap.telegram]||'').trim() : ''
+    });
+  }
+  return result;
+}
+
 function parseCsv(csvText){
   const parsed = Papa.parse(csvText, { skipEmptyLines:false });
   return parsed.data;
@@ -1264,6 +1358,7 @@ function parseCsv(csvText){
 /* ================= KATEGORI (ASSURANCE / PROVISIONING / B2B) ================= */
 const CATEGORIES = ['ASSURANCE','PROVISIONING','B2B'];
 let activeCategory = 'ASSURANCE';
+let currentView = 'DASHBOARD'; // 'DASHBOARD' | 'TEAM_LEADER'
 
 /* ================= STATE DATA (hasil fetch dari Google Sheets untuk bulan aktif) ================= */
 let allTechnicians = [];   // seluruh teknisi (semua kategori) hasil parse sheet bulan aktif
@@ -1272,6 +1367,7 @@ let YEAR, MONTH, DAYS_IN_MONTH, TODAY_DATE, IS_CURRENT_MONTH;
 let TOTAL_TEKNISI = 0;
 let activeSektor = 'ALL';
 let lastFetchError = null;
+let teamLeaders = [];
 
 function pct(n){ return TOTAL_TEKNISI ? Math.round((n/TOTAL_TEKNISI)*1000)/10 : 0; }
 function getFiltered(){ return activeSektor === 'ALL' ? technicians : technicians.filter(t => t.sektor === activeSektor); }
@@ -1297,6 +1393,18 @@ async function fetchScheduleForMonth(y, m){
     while(sched.length < daysInMonth) sched.push('X');
     return { ...p, schedule: sched };
   });
+}
+
+async function fetchTeamLeaders(){
+  const url = sheetCsvUrl(TEAM_LEADER_SHEET_NAME, TEAM_LEADER_RANGE);
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`Sheet "${TEAM_LEADER_SHEET_NAME}" tidak ditemukan / tidak bisa diakses.`);
+  const csvText = await res.text();
+  if(/^\s*<!DOCTYPE html/i.test(csvText) || /accounts\.google\.com/i.test(csvText)){
+    throw new Error(`Sheet "${TEAM_LEADER_SHEET_NAME}" tidak bisa diakses publik. Pastikan share setting sudah "Anyone with the link can view".`);
+  }
+  const aoa = parseCsv(csvText);
+  return parseTeamLeaderSheet(aoa);
 }
 
 /* ================= CLOCK ================= */
@@ -1565,6 +1673,46 @@ function renderRekapTable(){
   document.getElementById('rekapBody').innerHTML = html || '<tr><td colspan="12" style="padding:16px;color:var(--muted-2);">Tidak ada teknisi pada sektor ini.</td></tr>';
 }
 
+/* ================= RENDER: TEAM LEADER ================= */
+function renderTeamLeaderTable(){
+  document.getElementById('teamLeaderSub').textContent = teamLeaders.length
+    ? `${teamLeaders.length} team leader terdaftar`
+    : (lastFetchError ? 'Gagal memuat data.' : 'Belum ada data.');
+  const tbody = document.getElementById('teamLeaderBody');
+  if(teamLeaders.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--muted-2); padding:16px;">Belum ada data Team Leader, atau gagal dimuat dari Google Sheets.</td></tr>`;
+    return;
+  }
+  let html = '';
+  teamLeaders.forEach((tl, idx)=>{
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td style="text-align:left; padding-left:14px;">${tl.jobdesk}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.nik}</td>
+      <td style="text-align:left; padding-left:14px; font-weight:600;">${tl.nama}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.email}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.nohp}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.telegram}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+async function loadTeamLeaders(){
+  showToast('Mengambil data Team Leader dari Google Sheets...');
+  try{
+    teamLeaders = await fetchTeamLeaders();
+    lastFetchError = null;
+    renderTeamLeaderTable();
+    showToast('Data Team Leader berhasil dimuat.');
+  }catch(err){
+    console.error(err);
+    lastFetchError = err.message;
+    teamLeaders = [];
+    renderTeamLeaderTable();
+    showToast('Gagal memuat Team Leader: ' + err.message);
+  }
+}
+
 /* ================= FILTER SEKTOR ================= */
 function populateSektorFilter(){
   const sel = document.getElementById('sektorFilter');
@@ -1635,8 +1783,12 @@ async function loadMonthData(y, m){
   await refreshNavBadges();
 }
 
-/* ================= NAVIGASI KATEGORI ================= */
+/* ================= NAVIGASI KATEGORI & VIEW ================= */
 function updateHeaderSub(){
+  if(currentView === 'TEAM_LEADER'){
+    document.getElementById('headerSub').textContent = 'STO Jatinegara (JTN) — Team Leader';
+    return;
+  }
   const catLabel = activeCategory.charAt(0) + activeCategory.slice(1).toLowerCase();
   const sub = document.getElementById('headerSub');
   sub.textContent = `STO Jatinegara (JTN) — Kategori: ${catLabel}`;
@@ -1648,23 +1800,44 @@ async function refreshNavBadges(){
     if(badge) badge.textContent = count;
   });
 }
-function switchCategory(cat){
-  if(cat === activeCategory) return;
-  activeCategory = cat;
+function updateNavActiveStates(){
   document.querySelectorAll('.sidebar-nav-item').forEach(el=>{
-    el.classList.toggle('active', el.dataset.category === cat);
+    let isActive = false;
+    if(currentView === 'DASHBOARD' && el.dataset.category){ isActive = (el.dataset.category === activeCategory); }
+    if(currentView === 'TEAM_LEADER' && el.dataset.view === 'TEAM_LEADER'){ isActive = true; }
+    el.classList.toggle('active', isActive);
   });
-  activeSektor = 'ALL';
-  applyCategoryFilter();
+}
+function switchView(view){
+  currentView = view;
+  document.getElementById('dashboardView').style.display = (view === 'DASHBOARD') ? '' : 'none';
+  document.getElementById('teamLeaderView').style.display = (view === 'TEAM_LEADER') ? '' : 'none';
+  updateNavActiveStates();
   updateHeaderSub();
-  populateSektorFilter();
-  renderAll();
+  if(view === 'TEAM_LEADER' && teamLeaders.length === 0){
+    loadTeamLeaders();
+  }
 }
 document.getElementById('categoryNav').addEventListener('click', (e)=>{
   const item = e.target.closest('.sidebar-nav-item');
   if(!item) return;
-  switchCategory(item.dataset.category);
+  const cat = item.dataset.category;
+  const needsReload = (cat !== activeCategory) || (currentView !== 'DASHBOARD');
+  activeCategory = cat;
+  switchView('DASHBOARD');
+  if(needsReload){
+    activeSektor = 'ALL';
+    applyCategoryFilter();
+    populateSektorFilter();
+    renderAll();
+  }
 });
+document.getElementById('otherNav').addEventListener('click', (e)=>{
+  const item = e.target.closest('.sidebar-nav-item');
+  if(!item) return;
+  if(item.dataset.view === 'TEAM_LEADER') switchView('TEAM_LEADER');
+});
+document.getElementById('btnRefreshTeamLeader').addEventListener('click', loadTeamLeaders);
 
 /* ================= SELECTOR BULAN ================= */
 function populateMonthSelector(){
@@ -1750,7 +1923,10 @@ document.getElementById('btnRefreshData').addEventListener('click', async ()=>{
 });
 
 // Refresh otomatis tiap 5 menit supaya dashboard tetap "LIVE"
-setInterval(()=>{ loadMonthData(YEAR, MONTH); }, 5 * 60 * 1000);
+setInterval(()=>{
+  if(currentView === 'DASHBOARD') loadMonthData(YEAR, MONTH);
+  else loadTeamLeaders();
+}, 5 * 60 * 1000);
 
 /* ================= EVENT: EXPORT JSON ================= */
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -1773,10 +1949,9 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 /* ================= INIT ================= */
 async function init(){
   activeCategory = 'ASSURANCE';
-  document.querySelectorAll('.sidebar-nav-item').forEach(el=>{
-    el.classList.toggle('active', el.dataset.category === activeCategory);
-  });
+  currentView = 'DASHBOARD';
   YEAR = REAL_YEAR; MONTH = REAL_MONTH;
+  updateNavActiveStates();
   populateMonthSelector();
   await loadMonthData(REAL_YEAR, REAL_MONTH);
 }
