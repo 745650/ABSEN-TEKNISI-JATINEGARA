@@ -1134,6 +1134,7 @@
             <th style="text-align:left; padding-left:14px;">Email Corporate</th>
             <th style="text-align:left; padding-left:14px;">No HP</th>
             <th style="text-align:left; padding-left:14px;">ID Telegram</th>
+            <th style="text-align:left; padding-left:14px;">User Telegram</th>
           </tr>
         </thead>
         <tbody id="teamLeaderBody"></tbody>
@@ -1308,7 +1309,7 @@ function parseJadwalSheet(aoa){
 }
 
 // Cari baris header (mengandung "NAMA") pada sheet Team Leader, lalu petakan kolom yang diminta:
-// JOBDESK, NIK, NAMA, EMAIL CORPORATE, NO HP, ID TELEGRAM
+// JOBDESK, NIK, NAMA, EMAIL CORPORATE, NO HP, ID TELEGRAM, USER TELEGRAM
 function parseTeamLeaderSheet(aoa){
   const wanted = {
     jobdesk: ['JOBDESK','JOB DESK'],
@@ -1316,7 +1317,8 @@ function parseTeamLeaderSheet(aoa){
     nama: ['NAMA'],
     email: ['EMAIL CORPORATE','EMAIL'],
     nohp: ['NO HP','NOHP','NO. HP'],
-    telegram: ['ID TELEGRAM','TELEGRAM','ID TELEGRAM (@USERNAME)']
+    telegram: ['ID TELEGRAM','TELEGRAM'],
+    userTelegram: ['USER TELEGRAM','USERNAME TELEGRAM','USER TELEGRAM (@USERNAME)']
   };
   let headerRow = -1;
   const colMap = {};
@@ -1344,7 +1346,8 @@ function parseTeamLeaderSheet(aoa){
       nama,
       email: colMap.email !== -1 ? String(row[colMap.email]||'').trim() : '',
       nohp: colMap.nohp !== -1 ? String(row[colMap.nohp]||'').trim() : '',
-      telegram: colMap.telegram !== -1 ? String(row[colMap.telegram]||'').trim() : ''
+      telegram: colMap.telegram !== -1 ? String(row[colMap.telegram]||'').trim() : '',
+      userTelegram: colMap.userTelegram !== -1 ? String(row[colMap.userTelegram]||'').trim() : ''
     });
   }
   return result;
@@ -1680,7 +1683,7 @@ function renderTeamLeaderTable(){
     : (lastFetchError ? 'Gagal memuat data.' : 'Belum ada data.');
   const tbody = document.getElementById('teamLeaderBody');
   if(teamLeaders.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--muted-2); padding:16px;">Belum ada data Team Leader, atau gagal dimuat dari Google Sheets.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted-2); padding:16px;">Belum ada data Team Leader, atau gagal dimuat dari Google Sheets.</td></tr>`;
     return;
   }
   let html = '';
@@ -1693,6 +1696,7 @@ function renderTeamLeaderTable(){
       <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.email}</td>
       <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.nohp}</td>
       <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.telegram}</td>
+      <td style="text-align:left; padding-left:14px; color:var(--muted);">${tl.userTelegram}</td>
     </tr>`;
   });
   tbody.innerHTML = html;
