@@ -765,9 +765,11 @@
     position:fixed;
     inset:0;
     background:
-      radial-gradient(1100px 500px at 85% -10%, var(--glow-1), transparent),
-      radial-gradient(900px 500px at 0% 110%, var(--glow-2), transparent),
-      var(--bg);
+      linear-gradient(rgba(6,10,20,0.72), rgba(6,10,20,0.82)),
+      url('login-bg.png');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
     display:flex;
     align-items:center;
     justify-content:center;
