@@ -854,6 +854,31 @@
   }
   .btn-login:disabled{opacity:0.6;cursor:default;}
   .btn-login:hover:not(:disabled){filter:brightness(1.08);}
+
+  /* TEAM LEADER PASSWORD MODAL */
+  #tlAuthOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(5,10,20,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    padding:20px;
+  }
+  #tlAuthOverlay.hidden{display:none;}
+  .tl-auth-close{
+    position:absolute;
+    top:14px; right:16px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .tl-auth-close:hover{color:var(--text);}
+  .login-card{position:relative;}
 </style>
 </head>
 <body data-theme="mono">
@@ -874,6 +899,23 @@
         <input type="password" id="loginPassword" autocomplete="current-password" required>
       </div>
       <button type="submit" class="btn-login" id="btnLogin">Masuk</button>
+    </form>
+  </div>
+</div>
+
+<div id="tlAuthOverlay" class="hidden">
+  <div class="login-card">
+    <button type="button" class="tl-auth-close" id="tlAuthClose" aria-label="Tutup">&#10005;</button>
+    <div class="brand-mark">&#128274;</div>
+    <h2>Akses Team Leader</h2>
+    <div class="login-sub">Masukkan password untuk membuka menu ini</div>
+    <div class="login-error" id="tlAuthError"></div>
+    <form id="tlAuthForm">
+      <div class="login-field">
+        <label for="tlAuthPassword">Password</label>
+        <input type="password" id="tlAuthPassword" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login" id="btnTlAuth">Buka</button>
     </form>
   </div>
 </div>
@@ -1836,10 +1878,66 @@ document.getElementById('categoryNav').addEventListener('click', (e)=>{
     renderAll();
   }
 });
+/* ================= GATE PASSWORD: TEAM LEADER ================= */
+const TL_AUTH_SESSION_KEY = 'jtnTeamLeaderAuthed';
+
+function openTlAuthModal(){
+  document.getElementById('tlAuthError').classList.remove('show');
+  document.getElementById('tlAuthPassword').value = '';
+  document.getElementById('tlAuthOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('tlAuthPassword').focus(), 50);
+}
+function closeTlAuthModal(){
+  document.getElementById('tlAuthOverlay').classList.add('hidden');
+}
+async function attemptTlAuth(password){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'team_leader_auth', password })
+  });
+  let data;
+  try{ data = await res.json(); }
+  catch(e){ throw new Error('Respons dari server tidak valid.'); }
+  if(!data || !data.success){ throw new Error((data && data.error) || 'Password salah.'); }
+  return true;
+}
+
 document.getElementById('otherNav').addEventListener('click', (e)=>{
   const item = e.target.closest('.sidebar-nav-item');
   if(!item) return;
-  if(item.dataset.view === 'TEAM_LEADER') switchView('TEAM_LEADER');
+  if(item.dataset.view === 'TEAM_LEADER'){
+    if(sessionStorage.getItem(TL_AUTH_SESSION_KEY) === 'true'){
+      switchView('TEAM_LEADER');
+    } else {
+      openTlAuthModal();
+    }
+  }
+});
+document.getElementById('tlAuthClose').addEventListener('click', closeTlAuthModal);
+document.getElementById('tlAuthOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'tlAuthOverlay') closeTlAuthModal();
+});
+document.getElementById('tlAuthForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const password = document.getElementById('tlAuthPassword').value;
+  const errBox = document.getElementById('tlAuthError');
+  const btn = document.getElementById('btnTlAuth');
+  errBox.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Memeriksa...';
+  try{
+    await attemptTlAuth(password);
+    sessionStorage.setItem(TL_AUTH_SESSION_KEY, 'true');
+    closeTlAuthModal();
+    switchView('TEAM_LEADER');
+  }catch(err){
+    errBox.textContent = err.message;
+    errBox.classList.add('show');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Buka';
+  }
 });
 document.getElementById('btnRefreshTeamLeader').addEventListener('click', loadTeamLeaders);
 
