@@ -764,27 +764,39 @@
   #loginOverlay{
     position:fixed;
     inset:0;
-    background:
-      linear-gradient(rgba(6,10,20,0.72), rgba(6,10,20,0.82)),
-      url('login-bg.png');
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
+    background:#0a0e18;
     display:flex;
     align-items:center;
     justify-content:center;
     z-index:1000;
     padding:20px;
+    overflow:hidden;
   }
+  #loginOverlay::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:url('login-bg.png');
+    background-size:contain;
+    background-position:center;
+    background-repeat:no-repeat;
+  }
+  #loginOverlay::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg, rgba(6,10,20,0.05), rgba(6,10,20,0.15) 60%, rgba(6,10,20,0.35));
+  }
+  .login-card{position:relative; z-index:1;}
   #loginOverlay.hidden{display:none;}
   .login-card{
     width:100%;
     max-width:360px;
-    background:var(--panel);
-    border:1px solid var(--border);
+    background:rgba(20,26,38,0.02);
+    border:1px solid rgba(255,255,255,0.35);
     border-radius:14px;
     padding:32px 28px 28px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.12);
+    box-shadow:0 20px 60px rgba(0,0,0,0.15);
   }
   .login-card .brand-mark{
     width:44px;height:44px;
@@ -803,33 +815,37 @@
     font-weight:700;
     text-align:center;
     margin:0 0 4px;
-    color:var(--text);
+    color:#f4f6fb;
+    text-shadow:0 1px 6px rgba(0,0,0,0.5);
   }
   .login-card .login-sub{
     text-align:center;
     font-size:12.5px;
-    color:var(--muted);
+    color:#dfe2ec;
     margin-bottom:22px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.5);
   }
   .login-field{margin-bottom:14px;}
   .login-field label{
     display:block;
     font-size:11.5px;
     font-weight:600;
-    color:var(--muted);
+    color:#dfe2ec;
     margin-bottom:6px;
+    text-shadow:0 1px 4px rgba(0,0,0,0.5);
   }
   .login-field input{
     width:100%;
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.32);
+    color:#f4f6fb;
     font-family:'Inter',sans-serif;
     font-size:13.5px;
     padding:10px 12px;
     border-radius:8px;
     box-sizing:border-box;
   }
+  .login-field input::placeholder{color:#c9cddb;}
   .login-field input:focus{outline:1px solid var(--cyan);}
   .login-error{
     background:var(--red-dim);
@@ -856,6 +872,14 @@
   }
   .btn-login:disabled{opacity:0.6;cursor:default;}
   .btn-login:hover:not(:disabled){filter:brightness(1.08);}
+  #loginOverlay .btn-login,
+  #tlAuthOverlay .btn-login{
+    background:rgba(20,26,38,0.45);
+    border:1px solid rgba(255,255,255,0.35);
+    color:#f4f6fb;
+  }
+  #loginOverlay .btn-login:hover:not(:disabled),
+  #tlAuthOverlay .btn-login:hover:not(:disabled){background:rgba(20,26,38,0.6); filter:none;}
 
   /* TEAM LEADER PASSWORD MODAL */
   #tlAuthOverlay{
@@ -880,7 +904,6 @@
     line-height:1;
   }
   .tl-auth-close:hover{color:var(--text);}
-  .login-card{position:relative;}
 </style>
 </head>
 <body data-theme="mono">
